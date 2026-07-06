@@ -1,0 +1,7 @@
+.venv/
+.DS_Store
+dados_rf/
+saida_partes/
+geo_cache.jsonl
+*.log
+Escopo de Construção para Mapa da Economia Circular – Estado de SP.pdf

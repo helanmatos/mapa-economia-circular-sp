@@ -1,0 +1,646 @@
+municipio,regiao_administrativa,municipio_norm
+Arujá,1ª Grande SP,ARUJA
+Barueri,1ª Grande SP,BARUERI
+Biritiba Mirim,1ª Grande SP,BIRITIBA MIRIM
+Caieiras,1ª Grande SP,CAIEIRAS
+Cajamar,1ª Grande SP,CAJAMAR
+Carapicuíba,1ª Grande SP,CARAPICUIBA
+Cotia,1ª Grande SP,COTIA
+Diadema,1ª Grande SP,DIADEMA
+Embu das Artes,1ª Grande SP,EMBU DAS ARTES
+Embu-Guaçu,1ª Grande SP,EMBU-GUACU
+Ferraz de Vasconcelos,1ª Grande SP,FERRAZ DE VASCONCELOS
+Francisco Morato,1ª Grande SP,FRANCISCO MORATO
+Franco da Rocha,1ª Grande SP,FRANCO DA ROCHA
+Guararema,1ª Grande SP,GUARAREMA
+Guarulhos,1ª Grande SP,GUARULHOS
+Itapecerica da Serra,1ª Grande SP,ITAPECERICA DA SERRA
+Itapevi,1ª Grande SP,ITAPEVI
+Itaquaquecetuba,1ª Grande SP,ITAQUAQUECETUBA
+Jandira,1ª Grande SP,JANDIRA
+Juquitiba,1ª Grande SP,JUQUITIBA
+Mairiporã,1ª Grande SP,MAIRIPORA
+Mauá,1ª Grande SP,MAUA
+Mogi das Cruzes,1ª Grande SP,MOGI DAS CRUZES
+Osasco,1ª Grande SP,OSASCO
+Pirapora do Bom Jesus,1ª Grande SP,PIRAPORA DO BOM JESUS
+Poá,1ª Grande SP,POA
+Ribeirão Pires,1ª Grande SP,RIBEIRAO PIRES
+Rio Grande da Serra,1ª Grande SP,RIO GRANDE DA SERRA
+Salesópolis,1ª Grande SP,SALESOPOLIS
+Santa Isabel,1ª Grande SP,SANTA ISABEL
+Santana de Parnaíba,1ª Grande SP,SANTANA DE PARNAIBA
+Santo André,1ª Grande SP,SANTO ANDRE
+São Bernardo do Campo,1ª Grande SP,SAO BERNARDO DO CAMPO
+São Caetano do Sul,1ª Grande SP,SAO CAETANO DO SUL
+São Lourenço da Serra,1ª Grande SP,SAO LOURENCO DA SERRA
+São Paulo,1ª Grande SP,SAO PAULO
+Suzano,1ª Grande SP,SUZANO
+Taboão da Serra,1ª Grande SP,TABOAO DA SERRA
+Vargem Grande Paulista,1ª Grande SP,VARGEM GRANDE PAULISTA
+Bertioga,2ª Santos,BERTIOGA
+Cubatão,2ª Santos,CUBATAO
+Guarujá,2ª Santos,GUARUJA
+Itanhaém,2ª Santos,ITANHAEM
+Mongaguá,2ª Santos,MONGAGUA
+Peruíbe,2ª Santos,PERUIBE
+Praia Grande,2ª Santos,PRAIA GRANDE
+Santos,2ª Santos,SANTOS
+São Vicente,2ª Santos,SAO VICENTE
+Barra do Turvo,2Aª Registro,BARRA DO TURVO
+Cajati,2Aª Registro,CAJATI
+Cananéia,2Aª Registro,CANANEIA
+Eldorado,2Aª Registro,ELDORADO
+Iguape,2Aª Registro,IGUAPE
+Ilha Comprida,2Aª Registro,ILHA COMPRIDA
+Itariri,2Aª Registro,ITARIRI
+Jacupiranga,2Aª Registro,JACUPIRANGA
+Juquiá,2Aª Registro,JUQUIA
+Miracatu,2Aª Registro,MIRACATU
+Pariquera-Açu,2Aª Registro,PARIQUERA-ACU
+Pedro de Toledo,2Aª Registro,PEDRO DE TOLEDO
+Registro,2Aª Registro,REGISTRO
+Sete Barras,2Aª Registro,SETE BARRAS
+Caraguatatuba,3ª São José dos Campos,CARAGUATATUBA
+Ilhabela,3ª São José dos Campos,ILHABELA
+São Sebastião,3ª São José dos Campos,SAO SEBASTIAO
+Ubatuba,3ª São José dos Campos,UBATUBA
+Arapeí,3ª São José dos Campos,ARAPEI
+Areias,3ª São José dos Campos,AREIAS
+Bananal,3ª São José dos Campos,BANANAL
+Cruzeiro,3ª São José dos Campos,CRUZEIRO
+Lavrinhas,3ª São José dos Campos,LAVRINHAS
+Queluz,3ª São José dos Campos,QUELUZ
+São José do Barreiro,3ª São José dos Campos,SAO JOSE DO BARREIRO
+Silveiras,3ª São José dos Campos,SILVEIRAS
+Aparecida,3ª São José dos Campos,APARECIDA
+Cachoeira Paulista,3ª São José dos Campos,CACHOEIRA PAULISTA
+Canas,3ª São José dos Campos,CANAS
+Cunha,3ª São José dos Campos,CUNHA
+Guaratinguetá,3ª São José dos Campos,GUARATINGUETA
+Lorena,3ª São José dos Campos,LORENA
+Piquete,3ª São José dos Campos,PIQUETE
+Potim,3ª São José dos Campos,POTIM
+Roseira,3ª São José dos Campos,ROSEIRA
+Caçapava,3ª São José dos Campos,CACAPAVA
+Igaratá,3ª São José dos Campos,IGARATA
+Jacareí,3ª São José dos Campos,JACAREI
+Jambeiro,3ª São José dos Campos,JAMBEIRO
+Monteiro Lobato,3ª São José dos Campos,MONTEIRO LOBATO
+Paraibuna,3ª São José dos Campos,PARAIBUNA
+Santa Branca,3ª São José dos Campos,SANTA BRANCA
+São José dos Campos,3ª São José dos Campos,SAO JOSE DOS CAMPOS
+Campos do Jordão,3ª São José dos Campos,CAMPOS DO JORDAO
+Lagoinha,3ª São José dos Campos,LAGOINHA
+Natividade da Serra,3ª São José dos Campos,NATIVIDADE DA SERRA
+Pindamonhangaba,3ª São José dos Campos,PINDAMONHANGABA
+Redenção da Serra,3ª São José dos Campos,REDENCAO DA SERRA
+Santo Antônio do Pinhal,3ª São José dos Campos,SANTO ANTONIO DO PINHAL
+São Bento do Sapucaí,3ª São José dos Campos,SAO BENTO DO SAPUCAI
+São Luiz do Paraitinga,3ª São José dos Campos,SAO LUIZ DO PARAITINGA
+Taubaté,3ª São José dos Campos,TAUBATE
+Tremembé,3ª São José dos Campos,TREMEMBE
+Águas de Santa Bárbara,4ª Sorocaba,AGUAS DE SANTA BARBARA
+Avaré,4ª Sorocaba,AVARE
+Cerqueira César,4ª Sorocaba,CERQUEIRA CESAR
+Iaras,4ª Sorocaba,IARAS
+Manduri,4ª Sorocaba,MANDURI
+Anhembi,4ª Sorocaba,ANHEMBI
+Areiópolis,4ª Sorocaba,AREIOPOLIS
+Bofete,4ª Sorocaba,BOFETE
+Botucatu,4ª Sorocaba,BOTUCATU
+Conchas,4ª Sorocaba,CONCHAS
+Itatinga,4ª Sorocaba,ITATINGA
+Laranjal Paulista,4ª Sorocaba,LARANJAL PAULISTA
+Pardinho,4ª Sorocaba,PARDINHO
+Pereiras,4ª Sorocaba,PEREIRAS
+Porangaba,4ª Sorocaba,PORANGABA
+Pratânia,4ª Sorocaba,PRATANIA
+São Manuel,4ª Sorocaba,SAO MANUEL
+Torre de Pedra,4ª Sorocaba,TORRE DE PEDRA
+Alambari,4ª Sorocaba,ALAMBARI
+Boituva,4ª Sorocaba,BOITUVA
+Capela do Alto,4ª Sorocaba,CAPELA DO ALTO
+Cerquilho,4ª Sorocaba,CERQUILHO
+Cesário Lange,4ª Sorocaba,CESARIO LANGE
+Guareí,4ª Sorocaba,GUAREI
+Itapetininga,4ª Sorocaba,ITAPETININGA
+Quadra,4ª Sorocaba,QUADRA
+São Miguel Arcanjo,4ª Sorocaba,SAO MIGUEL ARCANJO
+Sarapuí,4ª Sorocaba,SARAPUI
+Tatuí,4ª Sorocaba,TATUI
+Alumínio,4ª Sorocaba,ALUMINIO
+Araçariguama,4ª Sorocaba,ARACARIGUAMA
+Araçoiaba da Serra,4ª Sorocaba,ARACOIABA DA SERRA
+Ibiúna,4ª Sorocaba,IBIUNA
+Iperó,4ª Sorocaba,IPERO
+Itu,4ª Sorocaba,ITU
+Jumirim,4ª Sorocaba,JUMIRIM
+Mairinque,4ª Sorocaba,MAIRINQUE
+Piedade,4ª Sorocaba,PIEDADE
+Pilar do Sul,4ª Sorocaba,PILAR DO SUL
+Porto Feliz,4ª Sorocaba,PORTO FELIZ
+Salto,4ª Sorocaba,SALTO
+Salto de Pirapora,4ª Sorocaba,SALTO DE PIRAPORA
+São Roque,4ª Sorocaba,SAO ROQUE
+Sorocaba,4ª Sorocaba,SOROCABA
+Tapiraí,4ª Sorocaba,TAPIRAI
+Tietê,4ª Sorocaba,TIETE
+Votorantim,4ª Sorocaba,VOTORANTIM
+Águas de Lindóia,5ª Campinas,AGUAS DE LINDOIA
+Amparo,5ª Campinas,AMPARO
+Atibaia,5ª Campinas,ATIBAIA
+Bom Jesus dos Perdões,5ª Campinas,BOM JESUS DOS PERDOES
+Bragança Paulista,5ª Campinas,BRAGANCA PAULISTA
+Joanópolis,5ª Campinas,JOANOPOLIS
+Lindoia,5ª Campinas,LINDOIA
+Monte Alegre do Sul,5ª Campinas,MONTE ALEGRE DO SUL
+Nazaré Paulista,5ª Campinas,NAZARE PAULISTA
+Pedra Bela,5ª Campinas,PEDRA BELA
+Pinhalzinho,5ª Campinas,PINHALZINHO
+Piracaia,5ª Campinas,PIRACAIA
+Serra Negra,5ª Campinas,SERRA NEGRA
+Socorro,5ª Campinas,SOCORRO
+Tuiuti,5ª Campinas,TUIUTI
+Vargem,5ª Campinas,VARGEM
+Americana,5ª Campinas,AMERICANA
+Artur Nogueira,5ª Campinas,ARTUR NOGUEIRA
+Campinas,5ª Campinas,CAMPINAS
+Cosmópolis,5ª Campinas,COSMOPOLIS
+Engenheiro Coelho,5ª Campinas,ENGENHEIRO COELHO
+Estiva Gerbi,5ª Campinas,ESTIVA GERBI
+Holambra,5ª Campinas,HOLAMBRA
+Hortolândia,5ª Campinas,HORTOLANDIA
+Indaiatuba,5ª Campinas,INDAIATUBA
+Itapira,5ª Campinas,ITAPIRA
+Jaguariúna,5ª Campinas,JAGUARIUNA
+Mogi Guaçu,5ª Campinas,MOGI GUACU
+Mogi Mirim,5ª Campinas,MOGI MIRIM
+Monte Mor,5ª Campinas,MONTE MOR
+Nova Odessa,5ª Campinas,NOVA ODESSA
+Paulínia,5ª Campinas,PAULINIA
+Pedreira,5ª Campinas,PEDREIRA
+Santa Bárbara d'Oeste,5ª Campinas,SANTA BARBARA D'OESTE
+Santo Antônio de Posse,5ª Campinas,SANTO ANTONIO DE POSSE
+Sumaré,5ª Campinas,SUMARE
+Valinhos,5ª Campinas,VALINHOS
+Vinhedo,5ª Campinas,VINHEDO
+Cabreúva,5ª Campinas,CABREUVA
+Campo Limpo Paulista,5ª Campinas,CAMPO LIMPO PAULISTA
+Itatiba,5ª Campinas,ITATIBA
+Itupeva,5ª Campinas,ITUPEVA
+Jarinu,5ª Campinas,JARINU
+Jundiaí,5ª Campinas,JUNDIAI
+Louveira,5ª Campinas,LOUVEIRA
+Morungaba,5ª Campinas,MORUNGABA
+Várzea Paulista,5ª Campinas,VARZEA PAULISTA
+Araras,5ª Campinas,ARARAS
+Conchal,5ª Campinas,CONCHAL
+Cordeirópolis,5ª Campinas,CORDEIROPOLIS
+Iracemápolis,5ª Campinas,IRACEMAPOLIS
+Leme,5ª Campinas,LEME
+Limeira,5ª Campinas,LIMEIRA
+Pirassununga,5ª Campinas,PIRASSUNUNGA
+Santa Cruz da Conceição,5ª Campinas,SANTA CRUZ DA CONCEICAO
+Águas de São Pedro,5ª Campinas,AGUAS DE SAO PEDRO
+Capivari,5ª Campinas,CAPIVARI
+Charqueada,5ª Campinas,CHARQUEADA
+Elias Fausto,5ª Campinas,ELIAS FAUSTO
+Mombuca,5ª Campinas,MOMBUCA
+Piracicaba,5ª Campinas,PIRACICABA
+Rafard,5ª Campinas,RAFARD
+Rio das Pedras,5ª Campinas,RIO DAS PEDRAS
+Saltinho,5ª Campinas,SALTINHO
+Santa Maria da Serra,5ª Campinas,SANTA MARIA DA SERRA
+São Pedro,5ª Campinas,SAO PEDRO
+Analândia,5ª Campinas,ANALANDIA
+Brotas,5ª Campinas,BROTAS
+Corumbataí,5ª Campinas,CORUMBATAI
+Ipeúna,5ª Campinas,IPEUNA
+Itirapina,5ª Campinas,ITIRAPINA
+Rio Claro,5ª Campinas,RIO CLARO
+Santa Gertrudes,5ª Campinas,SANTA GERTRUDES
+Torrinha,5ª Campinas,TORRINHA
+Aguaí,5ª Campinas,AGUAI
+Águas da Prata,5ª Campinas,AGUAS DA PRATA
+Caconde,5ª Campinas,CACONDE
+Casa Branca,5ª Campinas,CASA BRANCA
+Divinolândia,5ª Campinas,DIVINOLANDIA
+Espírito Santo do Pinhal,5ª Campinas,ESPIRITO SANTO DO PINHAL
+Itobi,5ª Campinas,ITOBI
+Mococa,5ª Campinas,MOCOCA
+Santa Cruz das Palmeiras,5ª Campinas,SANTA CRUZ DAS PALMEIRAS
+Santo Antônio do Jardim,5ª Campinas,SANTO ANTONIO DO JARDIM
+São João da Boa Vista,5ª Campinas,SAO JOAO DA BOA VISTA
+São José do Rio Pardo,5ª Campinas,SAO JOSE DO RIO PARDO
+São Sebastião da Grama,5ª Campinas,SAO SEBASTIAO DA GRAMA
+Tambaú,5ª Campinas,TAMBAU
+Tapiratiba,5ª Campinas,TAPIRATIBA
+Vargem Grande do Sul,5ª Campinas,VARGEM GRANDE DO SUL
+Altinópolis,6ª Ribeirão Preto,ALTINOPOLIS
+Barrinha,6ª Ribeirão Preto,BARRINHA
+Brodowski,6ª Ribeirão Preto,BRODOWSKI
+Cajuru,6ª Ribeirão Preto,CAJURU
+Cássia dos Coqueiros,6ª Ribeirão Preto,CASSIA DOS COQUEIROS
+Cravinhos,6ª Ribeirão Preto,CRAVINHOS
+Dumont,6ª Ribeirão Preto,DUMONT
+Guariba,6ª Ribeirão Preto,GUARIBA
+Guatapará,6ª Ribeirão Preto,GUATAPARA
+Jaboticabal,6ª Ribeirão Preto,JABOTICABAL
+Jardinópolis,6ª Ribeirão Preto,JARDINOPOLIS
+Luiz Antônio,6ª Ribeirão Preto,LUIZ ANTONIO
+Monte Alto,6ª Ribeirão Preto,MONTE ALTO
+Pitangueiras,6ª Ribeirão Preto,PITANGUEIRAS
+Pontal,6ª Ribeirão Preto,PONTAL
+Pradópolis,6ª Ribeirão Preto,PRADOPOLIS
+Ribeirão Preto,6ª Ribeirão Preto,RIBEIRAO PRETO
+Santa Cruz da Esperança,6ª Ribeirão Preto,SANTA CRUZ DA ESPERANCA
+Santa Rosa de Viterbo,6ª Ribeirão Preto,SANTA ROSA DE VITERBO
+Santo Antônio da Alegria,6ª Ribeirão Preto,SANTO ANTONIO DA ALEGRIA
+São Simão,6ª Ribeirão Preto,SAO SIMAO
+Serra Azul,6ª Ribeirão Preto,SERRA AZUL
+Serrana,6ª Ribeirão Preto,SERRANA
+Sertãozinho,6ª Ribeirão Preto,SERTAOZINHO
+Taquaral,6ª Ribeirão Preto,TAQUARAL
+Agudos,7ª Bauru,AGUDOS
+Arealva,7ª Bauru,AREALVA
+Avaí,7ª Bauru,AVAI
+Balbinos,7ª Bauru,BALBINOS
+Bauru,7ª Bauru,BAURU
+Borebi,7ª Bauru,BOREBI
+Cabrália Paulista,7ª Bauru,CABRALIA PAULISTA
+Duartina,7ª Bauru,DUARTINA
+Iacanga,7ª Bauru,IACANGA
+Lençóis Paulista,7ª Bauru,LENCOIS PAULISTA
+Lucianópolis,7ª Bauru,LUCIANOPOLIS
+Macatuba,7ª Bauru,MACATUBA
+Paulistânia,7ª Bauru,PAULISTANIA
+Pederneiras,7ª Bauru,PEDERNEIRAS
+Pirajuí,7ª Bauru,PIRAJUI
+Piratininga,7ª Bauru,PIRATININGA
+Presidente Alves,7ª Bauru,PRESIDENTE ALVES
+Reginópolis,7ª Bauru,REGINOPOLIS
+Ubirajara,7ª Bauru,UBIRAJARA
+Bariri,7ª Bauru,BARIRI
+Barra Bonita,7ª Bauru,BARRA BONITA
+Bocaina,7ª Bauru,BOCAINA
+Boraceia,7ª Bauru,BORACEIA
+Dois Córregos,7ª Bauru,DOIS CORREGOS
+Igaraçu do Tietê,7ª Bauru,IGARACU DO TIETE
+Itaju,7ª Bauru,ITAJU
+Itapuí,7ª Bauru,ITAPUI
+Jaú,7ª Bauru,JAU
+Mineiros do Tietê,7ª Bauru,MINEIROS DO TIETE
+Cafelândia,7ª Bauru,CAFELANDIA
+Getulina,7ª Bauru,GETULINA
+Guaiçara,7ª Bauru,GUAICARA
+Guaimbê,7ª Bauru,GUAIMBE
+Guarantã,7ª Bauru,GUARANTA
+Lins,7ª Bauru,LINS
+Pongaí,7ª Bauru,PONGAI
+Promissão,7ª Bauru,PROMISSAO
+Sabino,7ª Bauru,SABINO
+Uru,7ª Bauru,URU
+Ariranha,8ª São José do Rio Preto,ARIRANHA
+Catanduva,8ª São José do Rio Preto,CATANDUVA
+Catiguá,8ª São José do Rio Preto,CATIGUA
+Elisiário,8ª São José do Rio Preto,ELISIARIO
+Irapuã,8ª São José do Rio Preto,IRAPUA
+Itajobi,8ª São José do Rio Preto,ITAJOBI
+Marapoama,8ª São José do Rio Preto,MARAPOAMA
+Novais,8ª São José do Rio Preto,NOVAIS
+Novo Horizonte,8ª São José do Rio Preto,NOVO HORIZONTE
+Palmares Paulista,8ª São José do Rio Preto,PALMARES PAULISTA
+Paraíso,8ª São José do Rio Preto,PARAISO
+Pindorama,8ª São José do Rio Preto,PINDORAMA
+Sales,8ª São José do Rio Preto,SALES
+Santa Adélia,8ª São José do Rio Preto,SANTA ADELIA
+Tabapuã,8ª São José do Rio Preto,TABAPUA
+Urupês,8ª São José do Rio Preto,URUPES
+Estrela d'Oeste,8ª São José do Rio Preto,ESTRELA D'OESTE
+Fernandópolis,8ª São José do Rio Preto,FERNANDOPOLIS
+Guarani d'Oeste,8ª São José do Rio Preto,GUARANI D'OESTE
+Indiaporã,8ª São José do Rio Preto,INDIAPORA
+Macedônia,8ª São José do Rio Preto,MACEDONIA
+Meridiano,8ª São José do Rio Preto,MERIDIANO
+Mira Estrela,8ª São José do Rio Preto,MIRA ESTRELA
+Ouroeste,8ª São José do Rio Preto,OUROESTE
+Pedranópolis,8ª São José do Rio Preto,PEDRANOPOLIS
+Populina,8ª São José do Rio Preto,POPULINA
+São João das Duas Pontes,8ª São José do Rio Preto,SAO JOAO DAS DUAS PONTES
+Turmalina,8ª São José do Rio Preto,TURMALINA
+Aparecida d'Oeste,8ª São José do Rio Preto,APARECIDA D'OESTE
+Aspásia,8ª São José do Rio Preto,ASPASIA
+Dirce Reis,8ª São José do Rio Preto,DIRCE REIS
+Dolcinópolis,8ª São José do Rio Preto,DOLCINOPOLIS
+Jales,8ª São José do Rio Preto,JALES
+Marinópolis,8ª São José do Rio Preto,MARINOPOLIS
+Mesópolis,8ª São José do Rio Preto,MESOPOLIS
+Nova Canaã Paulista,8ª São José do Rio Preto,NOVA CANAA PAULISTA
+Palmeira d'Oeste,8ª São José do Rio Preto,PALMEIRA D'OESTE
+Paranapuã,8ª São José do Rio Preto,PARANAPUA
+Pontalinda,8ª São José do Rio Preto,PONTALINDA
+Rubineia,8ª São José do Rio Preto,RUBINEIA
+Santa Albertina,8ª São José do Rio Preto,SANTA ALBERTINA
+Santa Clara d'Oeste,8ª São José do Rio Preto,SANTA CLARA D'OESTE
+Santa Fé do Sul,8ª São José do Rio Preto,SANTA FE DO SUL
+Santa Rita d'Oeste,8ª São José do Rio Preto,SANTA RITA D'OESTE
+Santa Salete,8ª São José do Rio Preto,SANTA SALETE
+Santana da Ponte Pensa,8ª São José do Rio Preto,SANTANA DA PONTE PENSA
+São Francisco,8ª São José do Rio Preto,SAO FRANCISCO
+Três Fronteiras,8ª São José do Rio Preto,TRES FRONTEIRAS
+Urânia,8ª São José do Rio Preto,URANIA
+Vitória Brasil,8ª São José do Rio Preto,VITORIA BRASIL
+Adolfo,8ª São José do Rio Preto,ADOLFO
+Bady Bassitt,8ª São José do Rio Preto,BADY BASSITT
+Bálsamo,8ª São José do Rio Preto,BALSAMO
+Cedral,8ª São José do Rio Preto,CEDRAL
+Guapiaçu,8ª São José do Rio Preto,GUAPIACU
+Ibirá,8ª São José do Rio Preto,IBIRA
+Icém,8ª São José do Rio Preto,ICEM
+Ipiguá,8ª São José do Rio Preto,IPIGUA
+Jaci,8ª São José do Rio Preto,JACI
+José Bonifácio,8ª São José do Rio Preto,JOSE BONIFACIO
+Mendonça,8ª São José do Rio Preto,MENDONCA
+Mirassol,8ª São José do Rio Preto,MIRASSOL
+Mirassolândia,8ª São José do Rio Preto,MIRASSOLANDIA
+Monte Aprazível,8ª São José do Rio Preto,MONTE APRAZIVEL
+Neves Paulista,8ª São José do Rio Preto,NEVES PAULISTA
+Nipoã,8ª São José do Rio Preto,NIPOA
+Nova Aliança,8ª São José do Rio Preto,NOVA ALIANCA
+Nova Granada,8ª São José do Rio Preto,NOVA GRANADA
+Onda Verde,8ª São José do Rio Preto,ONDA VERDE
+Orindiúva,8ª São José do Rio Preto,ORINDIUVA
+Palestina,8ª São José do Rio Preto,PALESTINA
+Paulo de Faria,8ª São José do Rio Preto,PAULO DE FARIA
+Planalto,8ª São José do Rio Preto,PLANALTO
+Poloni,8ª São José do Rio Preto,POLONI
+Potirendaba,8ª São José do Rio Preto,POTIRENDABA
+São José do Rio Preto,8ª São José do Rio Preto,SAO JOSE DO RIO PRETO
+Tanabi,8ª São José do Rio Preto,TANABI
+Ubarana,8ª São José do Rio Preto,UBARANA
+Uchoa,8ª São José do Rio Preto,UCHOA
+União Paulista,8ª São José do Rio Preto,UNIAO PAULISTA
+Zacarias,8ª São José do Rio Preto,ZACARIAS
+Álvares Florence,8ª São José do Rio Preto,ALVARES FLORENCE
+Américo de Campos,8ª São José do Rio Preto,AMERICO DE CAMPOS
+Cardoso,8ª São José do Rio Preto,CARDOSO
+Cosmorama,8ª São José do Rio Preto,COSMORAMA
+Floreal,8ª São José do Rio Preto,FLOREAL
+Macaubal,8ª São José do Rio Preto,MACAUBAL
+Magda,8ª São José do Rio Preto,MAGDA
+Monções,8ª São José do Rio Preto,MONCOES
+Nhandeara,8ª São José do Rio Preto,NHANDEARA
+Parisi,8ª São José do Rio Preto,PARISI
+Pontes Gestal,8ª São José do Rio Preto,PONTES GESTAL
+Riolândia,8ª São José do Rio Preto,RIOLANDIA
+Sebastianópolis do Sul,8ª São José do Rio Preto,SEBASTIANOPOLIS DO SUL
+Valentim Gentil,8ª São José do Rio Preto,VALENTIM GENTIL
+Votuporanga,8ª São José do Rio Preto,VOTUPORANGA
+Andradina,9ª Araçatuba,ANDRADINA
+Castilho,9ª Araçatuba,CASTILHO
+Guaraçaí,9ª Araçatuba,GUARACAI
+Ilha Solteira,9ª Araçatuba,ILHA SOLTEIRA
+Itapura,9ª Araçatuba,ITAPURA
+Lavínia,9ª Araçatuba,LAVINIA
+Mirandópolis,9ª Araçatuba,MIRANDOPOLIS
+Murutinga do Sul,9ª Araçatuba,MURUTINGA DO SUL
+Nova Independência,9ª Araçatuba,NOVA INDEPENDENCIA
+Pereira Barreto,9ª Araçatuba,PEREIRA BARRETO
+Sud Mennucci,9ª Araçatuba,SUD MENNUCCI
+Suzanápolis,9ª Araçatuba,SUZANAPOLIS
+Alto Alegre,9ª Araçatuba,ALTO ALEGRE
+Araçatuba,9ª Araçatuba,ARACATUBA
+Auriflama,9ª Araçatuba,AURIFLAMA
+Avanhandava,9ª Araçatuba,AVANHANDAVA
+Barbosa,9ª Araçatuba,BARBOSA
+Bento de Abreu,9ª Araçatuba,BENTO DE ABREU
+Bilac,9ª Araçatuba,BILAC
+Birigui,9ª Araçatuba,BIRIGUI
+Braúna,9ª Araçatuba,BRAUNA
+Brejo Alegre,9ª Araçatuba,BREJO ALEGRE
+Buritama,9ª Araçatuba,BURITAMA
+Clementina,9ª Araçatuba,CLEMENTINA
+Coroados,9ª Araçatuba,COROADOS
+Gabriel Monteiro,9ª Araçatuba,GABRIEL MONTEIRO
+Gastão Vidigal,9ª Araçatuba,GASTAO VIDIGAL
+General Salgado,9ª Araçatuba,GENERAL SALGADO
+Glicério,9ª Araçatuba,GLICERIO
+Guararapes,9ª Araçatuba,GUARARAPES
+Guzolândia,9ª Araçatuba,GUZOLANDIA
+Lourdes,9ª Araçatuba,LOURDES
+Luiziânia,9ª Araçatuba,LUIZIANIA
+Nova Castilho,9ª Araçatuba,NOVA CASTILHO
+Nova Luzitânia,9ª Araçatuba,NOVA LUZITANIA
+Penápolis,9ª Araçatuba,PENAPOLIS
+Piacatu,9ª Araçatuba,PIACATU
+Rubiácea,9ª Araçatuba,RUBIACEA
+Santo Antônio do Aracanguá,9ª Araçatuba,SANTO ANTONIO DO ARACANGUA
+Santópolis do Aguapeí,9ª Araçatuba,SANTOPOLIS DO AGUAPEI
+São João de Iracema,9ª Araçatuba,SAO JOAO DE IRACEMA
+Turiúba,9ª Araçatuba,TURIUBA
+Valparaíso,9ª Araçatuba,VALPARAISO
+Adamantina,10ª Presidente Prudente,ADAMANTINA
+Flora Rica,10ª Presidente Prudente,FLORA RICA
+Flórida Paulista,10ª Presidente Prudente,FLORIDA PAULISTA
+Inúbia Paulista,10ª Presidente Prudente,INUBIA PAULISTA
+Irapuru,10ª Presidente Prudente,IRAPURU
+Lucélia,10ª Presidente Prudente,LUCELIA
+Mariápolis,10ª Presidente Prudente,MARIAPOLIS
+Osvaldo Cruz,10ª Presidente Prudente,OSVALDO CRUZ
+Pacaembu,10ª Presidente Prudente,PACAEMBU
+Pracinha,10ª Presidente Prudente,PRACINHA
+Sagres,10ª Presidente Prudente,SAGRES
+Salmourão,10ª Presidente Prudente,SALMOURAO
+Dracena,10ª Presidente Prudente,DRACENA
+Junqueirópolis,10ª Presidente Prudente,JUNQUEIROPOLIS
+Monte Castelo,10ª Presidente Prudente,MONTE CASTELO
+Nova Guataporanga,10ª Presidente Prudente,NOVA GUATAPORANGA
+Ouro Verde,10ª Presidente Prudente,OURO VERDE
+Panorama,10ª Presidente Prudente,PANORAMA
+Paulicéia,10ª Presidente Prudente,PAULICEIA
+Santa Mercedes,10ª Presidente Prudente,SANTA MERCEDES
+São João do Pau-d'Alho,10ª Presidente Prudente,SAO JOAO DO PAU-D'ALHO
+Tupi Paulista,10ª Presidente Prudente,TUPI PAULISTA
+Alfredo Marcondes,10ª Presidente Prudente,ALFREDO MARCONDES
+Álvares Machado,10ª Presidente Prudente,ALVARES MACHADO
+Anhumas,10ª Presidente Prudente,ANHUMAS
+Caiabu,10ª Presidente Prudente,CAIABU
+Caiuá,10ª Presidente Prudente,CAIUA
+Emilianópolis,10ª Presidente Prudente,EMILIANOPOLIS
+Estrela do Norte,10ª Presidente Prudente,ESTRELA DO NORTE
+Euclides da Cunha Paulista,10ª Presidente Prudente,EUCLIDES DA CUNHA PAULISTA
+Iepê,10ª Presidente Prudente,IEPE
+Indiana,10ª Presidente Prudente,INDIANA
+Marabá Paulista,10ª Presidente Prudente,MARABA PAULISTA
+Martinópolis,10ª Presidente Prudente,MARTINOPOLIS
+Mirante do Paranapanema,10ª Presidente Prudente,MIRANTE DO PARANAPANEMA
+Nantes,10ª Presidente Prudente,NANTES
+Narandiba,10ª Presidente Prudente,NARANDIBA
+Piquerobi,10ª Presidente Prudente,PIQUEROBI
+Pirapozinho,10ª Presidente Prudente,PIRAPOZINHO
+Presidente Bernardes,10ª Presidente Prudente,PRESIDENTE BERNARDES
+Presidente Epitácio,10ª Presidente Prudente,PRESIDENTE EPITACIO
+Presidente Prudente,10ª Presidente Prudente,PRESIDENTE PRUDENTE
+Presidente Venceslau,10ª Presidente Prudente,PRESIDENTE VENCESLAU
+Rancharia,10ª Presidente Prudente,RANCHARIA
+Regente Feijó,10ª Presidente Prudente,REGENTE FEIJO
+Ribeirão dos Índios,10ª Presidente Prudente,RIBEIRAO DOS INDIOS
+Rosana,10ª Presidente Prudente,ROSANA
+Sandovalina,10ª Presidente Prudente,SANDOVALINA
+Santo Anastácio,10ª Presidente Prudente,SANTO ANASTACIO
+Santo Expedito,10ª Presidente Prudente,SANTO EXPEDITO
+Taciba,10ª Presidente Prudente,TACIBA
+Tarabai,10ª Presidente Prudente,TARABAI
+Teodoro Sampaio,10ª Presidente Prudente,TEODORO SAMPAIO
+Assis,11ª Marília,ASSIS
+Campos Novos Paulista,11ª Marília,CAMPOS NOVOS PAULISTA
+Cândido Mota,11ª Marília,CANDIDO MOTA
+Cruzália,11ª Marília,CRUZALIA
+Florínea,11ª Marília,FLORINEA
+Ibirarema,11ª Marília,IBIRAREMA
+Lutécia,11ª Marília,LUTECIA
+Maracaí,11ª Marília,MARACAI
+Palmital,11ª Marília,PALMITAL
+Paraguaçu Paulista,11ª Marília,PARAGUACU PAULISTA
+Pedrinhas Paulista,11ª Marília,PEDRINHAS PAULISTA
+Platina,11ª Marília,PLATINA
+Tarumã,11ª Marília,TARUMA
+Álvaro de Carvalho,11ª Marília,ALVARO DE CARVALHO
+Alvinlândia,11ª Marília,ALVINLANDIA
+Echaporã,11ª Marília,ECHAPORA
+Fernão,11ª Marília,FERNAO
+Gália,11ª Marília,GALIA
+Garça,11ª Marília,GARCA
+Júlio Mesquita,11ª Marília,JULIO MESQUITA
+Lupércio,11ª Marília,LUPERCIO
+Marília,11ª Marília,MARILIA
+Ocauçu,11ª Marília,OCAUCU
+Oriente,11ª Marília,ORIENTE
+Oscar Bressane,11ª Marília,OSCAR BRESSANE
+Pompeia,11ª Marília,POMPEIA
+Vera Cruz,11ª Marília,VERA CRUZ
+Bernardino de Campos,11ª Marília,BERNARDINO DE CAMPOS
+Canitar,11ª Marília,CANITAR
+Chavantes,11ª Marília,CHAVANTES
+Espírito Santo do Turvo,11ª Marília,ESPIRITO SANTO DO TURVO
+Ipaussu,11ª Marília,IPAUSSU
+Óleo,11ª Marília,OLEO
+Ourinhos,11ª Marília,OURINHOS
+Ribeirão do Sul,11ª Marília,RIBEIRAO DO SUL
+Salto Grande,11ª Marília,SALTO GRANDE
+Santa Cruz do Rio Pardo,11ª Marília,SANTA CRUZ DO RIO PARDO
+São Pedro do Turvo,11ª Marília,SAO PEDRO DO TURVO
+Timburi,11ª Marília,TIMBURI
+Arco-Íris,11ª Marília,ARCO-IRIS
+Bastos,11ª Marília,BASTOS
+Borá,11ª Marília,BORA
+Herculândia,11ª Marília,HERCULANDIA
+Iacri,11ª Marília,IACRI
+João Ramalho,11ª Marília,JOAO RAMALHO
+Parapuã,11ª Marília,PARAPUA
+Quatá,11ª Marília,QUATA
+Queiroz,11ª Marília,QUEIROZ
+Quintana,11ª Marília,QUINTANA
+Rinópolis,11ª Marília,RINOPOLIS
+Tupã,11ª Marília,TUPA
+Américo Brasiliense,12ª Central,AMERICO BRASILIENSE
+Araraquara,12ª Central,ARARAQUARA
+Boa Esperança do Sul,12ª Central,BOA ESPERANCA DO SUL
+Borborema,12ª Central,BORBOREMA
+Cândido Rodrigues,12ª Central,CANDIDO RODRIGUES
+Dobrada,12ª Central,DOBRADA
+Fernando Prestes,12ª Central,FERNANDO PRESTES
+Gavião Peixoto,12ª Central,GAVIAO PEIXOTO
+Ibitinga,12ª Central,IBITINGA
+Itápolis,12ª Central,ITAPOLIS
+Matão,12ª Central,MATAO
+Motuca,12ª Central,MOTUCA
+Nova Europa,12ª Central,NOVA EUROPA
+Rincão,12ª Central,RINCAO
+Santa Ernestina,12ª Central,SANTA ERNESTINA
+Santa Lúcia,12ª Central,SANTA LUCIA
+Tabatinga,12ª Central,TABATINGA
+Taquaritinga,12ª Central,TAQUARITINGA
+Trabiju,12ª Central,TRABIJU
+Descalvado,12ª Central,DESCALVADO
+Dourado,12ª Central,DOURADO
+Ibaté,12ª Central,IBATE
+Porto Ferreira,12ª Central,PORTO FERREIRA
+Ribeirão Bonito,12ª Central,RIBEIRAO BONITO
+Santa Rita do Passa Quatro,12ª Central,SANTA RITA DO PASSA QUATRO
+São Carlos,12ª Central,SAO CARLOS
+Altair,13ª Barretos,ALTAIR
+Barretos,13ª Barretos,BARRETOS
+Bebedouro,13ª Barretos,BEBEDOURO
+Cajobi,13ª Barretos,CAJOBI
+Colina,13ª Barretos,COLINA
+Colômbia,13ª Barretos,COLOMBIA
+Embaúba,13ª Barretos,EMBAUBA
+Guaíra,13ª Barretos,GUAIRA
+Guaraci,13ª Barretos,GUARACI
+Jaborandi,13ª Barretos,JABORANDI
+Monte Azul Paulista,13ª Barretos,MONTE AZUL PAULISTA
+Olímpia,13ª Barretos,OLIMPIA
+Pirangi,13ª Barretos,PIRANGI
+Severínia,13ª Barretos,SEVERINIA
+Taiaçu,13ª Barretos,TAIACU
+Taiúva,13ª Barretos,TAIUVA
+Terra Roxa,13ª Barretos,TERRA ROXA
+Viradouro,13ª Barretos,VIRADOURO
+Vista Alegre do Alto,13ª Barretos,VISTA ALEGRE DO ALTO
+Aramina,14ª Franca,ARAMINA
+Batatais,14ª Franca,BATATAIS
+Buritizal,14ª Franca,BURITIZAL
+Cristais Paulista,14ª Franca,CRISTAIS PAULISTA
+Franca,14ª Franca,FRANCA
+Guará,14ª Franca,GUARA
+Igarapava,14ª Franca,IGARAPAVA
+Itirapuã,14ª Franca,ITIRAPUA
+Ituverava,14ª Franca,ITUVERAVA
+Jeriquara,14ª Franca,JERIQUARA
+Miguelópolis,14ª Franca,MIGUELOPOLIS
+Patrocínio Paulista,14ª Franca,PATROCINIO PAULISTA
+Pedregulho,14ª Franca,PEDREGULHO
+Restinga,14ª Franca,RESTINGA
+Ribeirão Corrente,14ª Franca,RIBEIRAO CORRENTE
+Rifaina,14ª Franca,RIFAINA
+São José da Bela Vista,14ª Franca,SAO JOSE DA BELA VISTA
+Ipuã,14ª Franca,IPUA
+Morro Agudo,14ª Franca,MORRO AGUDO
+Nuporanga,14ª Franca,NUPORANGA
+Orlândia,14ª Franca,ORLANDIA
+Sales Oliveira,14ª Franca,SALES OLIVEIRA
+São Joaquim da Barra,14ª Franca,SAO JOAQUIM DA BARRA
+Angatuba,16ª Itapeva,ANGATUBA
+Apiaí,16ª Itapeva,APIAI
+Arandu,16ª Itapeva,ARANDU
+Barão de Antonina,16ª Itapeva,BARAO DE ANTONINA
+Barra do Chapéu,16ª Itapeva,BARRA DO CHAPEU
+Bom Sucesso de Itararé,16ª Itapeva,BOM SUCESSO DE ITARARE
+Buri,16ª Itapeva,BURI
+Campina do Monte Alegre,16ª Itapeva,CAMPINA DO MONTE ALEGRE
+Capão Bonito,16ª Itapeva,CAPAO BONITO
+Coronel Macedo,16ª Itapeva,CORONEL MACEDO
+Fartura,16ª Itapeva,FARTURA
+Guapiara,16ª Itapeva,GUAPIARA
+Iporanga,16ª Itapeva,IPORANGA
+Itaberá,16ª Itapeva,ITABERA
+Itaí,16ª Itapeva,ITAI
+Itaoca,16ª Itapeva,ITAOCA
+Itapeva,16ª Itapeva,ITAPEVA
+Itapirapuã Paulista,16ª Itapeva,ITAPIRAPUA PAULISTA
+Itaporanga,16ª Itapeva,ITAPORANGA
+Itararé,16ª Itapeva,ITARARE
+Nova Campina,16ª Itapeva,NOVA CAMPINA
+Paranapanema,16ª Itapeva,PARANAPANEMA
+Piraju,16ª Itapeva,PIRAJU
+Ribeira,16ª Itapeva,RIBEIRA
+Ribeirão Branco,16ª Itapeva,RIBEIRAO BRANCO
+Ribeirão Grande,16ª Itapeva,RIBEIRAO GRANDE
+Riversul,16ª Itapeva,RIVERSUL
+Sarutaiá,16ª Itapeva,SARUTAIA
+Taguaí,16ª Itapeva,TAGUAI
+Taquarituba,16ª Itapeva,TAQUARITUBA
+Taquarivaí,16ª Itapeva,TAQUARIVAI
+Tejupá,16ª Itapeva,TEJUPA
