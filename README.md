@@ -2,13 +2,14 @@
 
 Mapeamento georreferenciado de iniciativas de economia circular no estado de São Paulo, construído para o projeto **Revolução Circular** (SENAC SP, Geração 2027).
 
-**[Ver o mapa interativo](https://helanmatos.github.io/mapa-economia-circular-sp/)**
+**[Ver o mapa interativo (pontos)](https://helanmatos.github.io/mapa-economia-circular-sp/)** · **[Ver mapa de calor](https://helanmatos.github.io/mapa-economia-circular-sp/mapa_calor.html)**
 
 ## O que tem no mapa
 
 - **8.719 empresas** de resíduos sólidos urbanos (coleta, tratamento, recuperação de materiais), extraídas dos Dados Abertos do CNPJ da Receita Federal e geocodificadas via Nominatim/OpenStreetMap.
 - **239 usinas de energia** por biogás/biomassa em operação, via dados abertos da ANEEL (SIGA), já com coordenadas oficiais.
 - Filtro por **Região Administrativa** (as 16 RAs do estado) e por **categoria circular** (ISO 59000: Reciclagem, Bioeconomia, Valorização energética, Tratamento/disposição).
+- Duas visualizações: pontos individuais coloridos (`index.html`) e **mapa de calor** de densidade (`mapa_calor.html`), com transição suave para pontos ao aproximar o zoom.
 
 ## Fontes de dados
 

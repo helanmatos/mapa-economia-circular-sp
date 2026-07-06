@@ -217,6 +217,11 @@ html = f'''<!DOCTYPE html>
     background: #fafafa; cursor: pointer;
   }}
   .toolbar button:hover {{ background: #eee; }}
+  .nav-link {{
+    display: block; text-align: center; font-size: 11.5px; margin-top: 10px; padding: 7px;
+    border: 1px solid #ccc; border-radius: 6px; color: #1B5E20; text-decoration: none;
+  }}
+  .nav-link:hover {{ background: #f0f0f0; }}
   .maplibregl-popup-content {{ font-family: inherit; font-size: 13px; padding: 10px 12px; }}
   .popup-nome {{ font-weight: 700; margin: 0 0 4px; }}
   .popup-cnae {{ color: #1B5E20; font-size: 11.5px; margin: 0 0 4px; }}
@@ -263,6 +268,7 @@ html = f'''<!DOCTYPE html>
     <button id="btn-todos">Marcar todos</button>
     <button id="btn-nenhum">Desmarcar todos</button>
   </div>
+  <a class="nav-link" href="mapa_calor.html">Ver mapa de calor →</a>
 </div>
 <script>
 const geojson = {json.dumps(geojson, ensure_ascii=False)};
@@ -278,7 +284,7 @@ map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
 let modo = 'atividade'; // 'atividade' | 'circular'
 
-map.on('load', () => {{
+function iniciarMapa() {{
   map.addSource('iniciativas', {{ type: 'geojson', data: geojson }});
   map.addLayer({{
     id: 'pontos',
@@ -296,6 +302,10 @@ map.on('load', () => {{
   const bounds = new maplibregl.LngLatBounds();
   geojson.features.forEach(f => bounds.extend(f.geometry.coordinates));
   if (!bounds.isEmpty()) map.fitBounds(bounds, {{ padding: 40, maxZoom: 9 }});
+  map.resize();
+  map.triggerRepaint();
+  setTimeout(() => {{ map.resize(); map.triggerRepaint(); }}, 150);
+  setTimeout(() => map.triggerRepaint(), 500);
 
   const popup = new maplibregl.Popup({{ closeButton: true, closeOnClick: true, maxWidth: '280px' }});
   map.on('click', 'pontos', (e) => {{
@@ -357,7 +367,8 @@ map.on('load', () => {{
   }}
   document.getElementById('modo-atividade').onclick = () => trocarModo('atividade');
   document.getElementById('modo-circular').onclick = () => trocarModo('circular');
-}});
+}}
+if (map.isStyleLoaded()) {{ iniciarMapa(); }} else {{ map.once('style.load', iniciarMapa); }}
 </script>
 </body>
 </html>
