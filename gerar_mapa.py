@@ -180,6 +180,18 @@ html = f'''<!DOCTYPE html>
   }}
   #painel h1 {{ font-size: 16px; margin: 0 0 2px; color: #1B5E20; }}
   #painel .sub {{ font-size: 12px; color: #666; margin: 0 0 12px; }}
+  .painel-header {{ display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }}
+  #toggle-painel {{
+    display: none; background: none; border: 1px solid #ccc; border-radius: 6px;
+    width: 30px; height: 30px; font-size: 15px; line-height: 1; cursor: pointer;
+    color: #1B5E20; flex-shrink: 0;
+  }}
+  @media (max-width: 720px) {{
+    #toggle-painel {{ display: block; }}
+    #painel.recolhido {{ padding: 10px 14px; width: auto; max-width: calc(100% - 32px); }}
+    #painel.recolhido .sub {{ margin-bottom: 0; }}
+    #painel.recolhido #painel-conteudo {{ display: none; }}
+  }}
   .stats {{ display: flex; gap: 8px; margin-bottom: 14px; }}
   .stat {{ flex: 1; background: #E8F5E9; border-radius: 8px; padding: 8px 10px; }}
   .stat .n {{ font-size: 18px; font-weight: 700; color: #1B5E20; line-height: 1.1; }}
@@ -233,8 +245,14 @@ html = f'''<!DOCTYPE html>
 <body>
 <div id="map"></div>
 <div id="painel">
-  <h1>Mapa de Economia Circular</h1>
-  <p class="sub">Resíduos e energia (biogás/biomassa) — SP · SENAC</p>
+  <div class="painel-header">
+    <div>
+      <h1>Mapa de Economia Circular</h1>
+      <p class="sub">Resíduos e energia (biogás/biomassa) — SP · SENAC</p>
+    </div>
+    <button id="toggle-painel" title="Recolher/expandir menu">✕</button>
+  </div>
+  <div id="painel-conteudo">
   <div class="stats">
     <div class="stat"><div class="n">{n_total_mapa:,}</div><div class="l">no mapa</div></div>
     <div class="stat"><div class="n">{n_residuos_mapa:,}</div><div class="l">resíduos</div></div>
@@ -269,6 +287,7 @@ html = f'''<!DOCTYPE html>
     <button id="btn-nenhum">Desmarcar todos</button>
   </div>
   <a class="nav-link" href="mapa_calor.html">Ver mapa de calor →</a>
+  </div>
 </div>
 <script>
 const geojson = {json.dumps(geojson, ensure_ascii=False)};
@@ -281,6 +300,20 @@ const map = new maplibregl.Map({{
   zoom: 6,
 }});
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+const painelEl = document.getElementById('painel');
+const btnTogglePainel = document.getElementById('toggle-painel');
+function atualizarBotaoPainel() {{
+  btnTogglePainel.textContent = painelEl.classList.contains('recolhido') ? '☰' : '✕';
+}}
+btnTogglePainel.addEventListener('click', () => {{
+  painelEl.classList.toggle('recolhido');
+  atualizarBotaoPainel();
+}});
+if (window.matchMedia('(max-width: 720px)').matches) {{
+  painelEl.classList.add('recolhido');
+}}
+atualizarBotaoPainel();
 
 let modo = 'atividade'; // 'atividade' | 'circular'
 
