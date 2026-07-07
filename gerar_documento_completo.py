@@ -1,0 +1,418 @@
+#!/usr/bin/env python3
+"""Gera o documento completo do projeto: processo, dados, método, insights, conclusões e lacunas."""
+import duckdb
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
+                                TableStyle, HRFlowable, PageBreak)
+
+SAIDA = 'documento_completo_mapa_economia_circular.pdf'
+
+VERDE = colors.HexColor('#1B5E20')
+VERDE_MED = colors.HexColor('#2E7D32')
+VERDE_CLARO = colors.HexColor('#E8F5E9')
+VERMELHO_CLARO = colors.HexColor('#FFEBEE')
+AMBAR_CLARO = colors.HexColor('#FFF8E1')
+CINZA = colors.HexColor('#555555')
+CINZA_CLARO = colors.HexColor('#F5F5F5')
+
+CNAE_DESC = {
+    '3811400': 'Coleta de resíduos não-perigosos',
+    '3812200': 'Coleta de resíduos perigosos',
+    '3821100': 'Tratamento/disposição não-perigosos',
+    '3822000': 'Tratamento/disposição perigosos',
+    '3831901': 'Recuperação de sucata de alumínio',
+    '3831999': 'Recuperação de sucata metálica',
+    '3832700': 'Recuperação de materiais plásticos',
+    '3839401': 'Usinas de compostagem',
+    '3839499': 'Recuperação de materiais (outros)',
+    '3900500': 'Descontaminação',
+}
+
+con = duckdb.connect()
+t_res = "read_csv('empresas_sp_circular_enriquecido.csv', header=true, all_varchar=true)"
+t_en = "read_csv('energia_biomassa_biogas_enriquecido.csv', header=true, all_varchar=true)"
+
+total_base = con.sql(f"SELECT count(*) FROM {t_res}").fetchone()[0]
+total_geo = con.sql(f"SELECT count(*) FROM {t_res} WHERE latitude != ''").fetchone()[0]
+total_energia = con.sql(f"SELECT count(*) FROM {t_en}").fetchone()[0]
+total_mapa = total_geo + total_energia
+
+status_geo = dict(con.sql(f"SELECT geocode_status, count(*) FROM {t_res} GROUP BY 1").fetchall())
+por_cnae = dict(con.sql(f"SELECT cnae_principal, count(*) FROM {t_res} GROUP BY 1").fetchall())
+por_categoria = dict(con.sql(f"""
+    WITH u AS (SELECT categoria_circular FROM {t_res} WHERE latitude != ''
+               UNION ALL SELECT categoria_circular FROM {t_en})
+    SELECT categoria_circular, count(*) FROM u GROUP BY 1
+""").fetchall())
+mw_biomassa = str(con.sql(f"SELECT round(sum(CAST(potencia_outorgada_kw AS DOUBLE))/1000,1) FROM {t_en} WHERE categoria_energia='Biomassa'").fetchone()[0]).replace('.', ',')
+mw_biogas = str(con.sql(f"SELECT round(sum(CAST(potencia_outorgada_kw AS DOUBLE))/1000,1) FROM {t_en} WHERE categoria_energia='Biogás'").fetchone()[0]).replace('.', ',')
+
+por_ra = con.sql("""
+    WITH n_mun AS (
+      SELECT regiao_administrativa, count(*) qtd FROM read_csv('municipios_regiao_administrativa.csv', header=true) GROUP BY 1
+    ), n_ini AS (
+      SELECT regiao_administrativa, count(*) n FROM (
+        SELECT regiao_administrativa FROM read_csv('empresas_sp_circular_enriquecido.csv', header=true, all_varchar=true) WHERE latitude!='' AND regiao_administrativa!=''
+        UNION ALL SELECT regiao_administrativa FROM read_csv('energia_biomassa_biogas_enriquecido.csv', header=true, all_varchar=true) WHERE regiao_administrativa!=''
+      ) GROUP BY 1
+    )
+    SELECT i.regiao_administrativa, i.n, m.qtd, round(i.n*1.0/m.qtd,1) norm
+    FROM n_ini i JOIN n_mun m USING(regiao_administrativa) ORDER BY norm
+""").fetchall()
+
+# formata numeros isoladamente (nunca encadear .replace em string com prosa)
+def fmt(n):
+    return f'{n:,}'.replace(',', '.')
+
+total_base_fmt, total_geo_fmt, total_mapa_fmt = fmt(total_base), fmt(total_geo), fmt(total_mapa)
+pct_geo = f'{100*total_geo/total_base:.1f}%'
+pct_falhou = f'{100*status_geo.get("falhou",0)/total_base:.1f}%'
+pct_cobertura = '80,6%'
+
+ss = getSampleStyleSheet()
+h1 = ParagraphStyle('h1', parent=ss['Heading1'], textColor=VERDE, fontSize=15, spaceBefore=18, spaceAfter=7)
+h2 = ParagraphStyle('h2', parent=ss['Heading2'], textColor=VERDE_MED, fontSize=11.5, spaceBefore=10, spaceAfter=4)
+titulo = ParagraphStyle('titulo', parent=ss['Title'], textColor=VERDE, fontSize=21, leading=26)
+sub = ParagraphStyle('sub', parent=ss['Normal'], textColor=CINZA, fontSize=11, spaceAfter=2)
+corpo = ParagraphStyle('corpo', parent=ss['Normal'], fontSize=10.5, leading=15.5, spaceAfter=7)
+item = ParagraphStyle('item', parent=corpo, leftIndent=12, spaceAfter=4)
+cel = ParagraphStyle('cel', parent=ss['Normal'], fontSize=9.3, leading=12)
+cel_b = ParagraphStyle('cel_b', parent=cel, textColor=colors.white, fontName='Helvetica-Bold')
+cel_feito = ParagraphStyle('cel_feito', parent=cel, textColor=VERDE_MED, fontName='Helvetica-Bold')
+cel_parcial = ParagraphStyle('cel_parcial', parent=cel, textColor=colors.HexColor('#B26A00'), fontName='Helvetica-Bold')
+cel_naofeito = ParagraphStyle('cel_naofeito', parent=cel, textColor=colors.HexColor('#C62828'), fontName='Helvetica-Bold')
+rodape = ParagraphStyle('rodape', parent=ss['Normal'], fontSize=8, textColor=CINZA, alignment=1)
+resumo_box = ParagraphStyle('resumo', parent=corpo, backColor=VERDE_CLARO, borderPadding=10, leading=16)
+
+story = []
+def P(txt, st=corpo): story.append(Paragraph(txt, st))
+def SP_(h=8): story.append(Spacer(1, h))
+def linha(cor=colors.HexColor('#CCCCCC')): story.append(HRFlowable(width='100%', thickness=0.6, color=cor, spaceAfter=8))
+
+# ============ CAPA / SUMARIO EXECUTIVO ============
+P('Mapa de Economia Circular', titulo)
+P('Estado de São Paulo — Documento Técnico Completo', sub)
+P('Processo, dados, método, insights e lacunas · Revolução Circular, Geração 2027 (GD 1) · SENAC SP · 07/07/2026', sub)
+SP_(6)
+story.append(HRFlowable(width='100%', thickness=2, color=VERDE_MED, spaceAfter=12))
+
+P('Sumário executivo', h1)
+P(f'Este documento descreve, de forma completa, o trabalho realizado até o momento no projeto '
+  f'Mapa de Economia Circular do estado de São Paulo: as fontes de dados usadas, o método de '
+  f'extração e tratamento, o conteúdo dos mapas publicados, os insights que podem ser extraídos '
+  f'da base atual, as conclusões possíveis dentro do que já foi levantado, e o que ainda falta '
+  f'para atender integralmente ao escopo formal do projeto.'
+  f'<br/><br/>'
+  f'Em números: <b>{total_base_fmt} empresas</b> de resíduos sólidos urbanos identificadas via '
+  f'CNPJ da Receita Federal (<b>{pct_geo}</b> geocodificadas), <b>239 usinas</b> de energia por '
+  f'biogás/biomassa via ANEEL, agregadas por <b>16 Regiões Administrativas</b> e classificadas em '
+  f'<b>4 categorias circulares</b> (ISO 59000), somando <b>{total_mapa_fmt} iniciativas</b> '
+  f'georreferenciadas com cobertura de <b>{pct_cobertura}</b> dos municípios do estado. Os dados '
+  f'estão publicados em dois mapas interativos (pontos individuais e mapa de calor).', resumo_box)
+
+SP_(10)
+P('Mapas publicados:', h2)
+P('— Mapa de pontos: <link href="https://helanmatos.github.io/mapa-economia-circular-sp/">'
+  'helanmatos.github.io/mapa-economia-circular-sp</link>', item)
+P('— Mapa de calor: <link href="https://helanmatos.github.io/mapa-economia-circular-sp/mapa_calor.html">'
+  'helanmatos.github.io/mapa-economia-circular-sp/mapa_calor.html</link>', item)
+P('— Repositório (código e dados): <link href="https://github.com/helanmatos/mapa-economia-circular-sp">'
+  'github.com/helanmatos/mapa-economia-circular-sp</link>', item)
+
+story.append(PageBreak())
+
+# ============ 1. OBJETIVO E CONTEXTO ============
+P('1. Objetivo e contexto do projeto', h1)
+P('O projeto se insere no programa <b>Revolução Circular</b> (Geração 2027, GD 1) do SENAC SP, '
+  'especificado no documento formal "Escopo de Construção para Mapa da Economia Circular – Estado '
+  'de SP" (especialista Maiara Scarparo Rodrigues Esteves). O objetivo integrado definido no escopo '
+  'é realizar um mapeamento sistemático das iniciativas de economia circular no estado, para: '
+  'diagnosticar o estágio do ecossistema, subsidiar políticas públicas, e permitir benchmarking '
+  'entre regiões.')
+P('O escopo formal define <b>3 setores</b> centrais (resíduos sólidos urbanos, energia via biogás/'
+  'biomassa, e logística reversa), pede classificação por <b>6 categorias circulares</b> da ISO '
+  '59000 (reuso, reciclagem, remanufatura, bioeconomia, logística reversa, valorização energética), '
+  'e uma matriz de dados por iniciativa incluindo tipo de organização, escala, estágio de '
+  'maturidade e impacto (ambiental/econômico/social) — além de recomendar múltiplas fontes '
+  '(institucionais, privadas, terceiro setor, academia).')
+P('Este documento cobre o que foi construído até agora: a camada de dados de <b>resíduos sólidos '
+  'urbanos</b> (via CNPJ) e <b>energia</b> (via ANEEL), enriquecida com Região Administrativa e '
+  'categoria circular, publicada em dois mapas interativos.')
+
+# ============ 2. FONTES DE DADOS ============
+P('2. Fontes de dados', h1)
+P('Três fontes de dados foram utilizadas até o momento, cada uma com propósito e cobertura '
+  'distintos:')
+fontes = [
+    [Paragraph('Fonte', cel_b), Paragraph('Uso', cel_b), Paragraph('Cobertura', cel_b), Paragraph('Como foi obtida', cel_b)],
+    [Paragraph('Receita Federal — CNPJ', cel), Paragraph('Empresas de resíduos sólidos, por CNAE', cel),
+     Paragraph('Ativas, competência jun/2026', cel), Paragraph('Dados Abertos do CNPJ, mirror Casa dos Dados (site oficial mudou de estrutura em jan/2026)', cel)],
+    [Paragraph('ANEEL — SIGA', cel), Paragraph('Usinas de biogás/biomassa em operação', cel),
+     Paragraph('Operação, jul/2026', cel), Paragraph('Dados Abertos da ANEEL (Sistema de Informações de Geração), já com coordenadas oficiais', cel)],
+    [Paragraph('IBGE / Wikipédia', cel), Paragraph('Município -> Região Administrativa (RA)', cel),
+     Paragraph('645 municípios, 16 RAs', cel), Paragraph('Tabela extraída via pandas.read_html de fonte não-governamental (ver limitações, seção 8)', cel)],
+]
+tbl_fontes = Table(fontes, colWidths=[3.3*cm, 4.2*cm, 3*cm, 6.5*cm])
+tbl_fontes.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+]))
+story.append(tbl_fontes)
+SP_(8)
+P('Os CNAEs de resíduos incluídos correspondem ao Grupo 38 da classificação CONCLA/IBGE (coleta, '
+  'tratamento e disposição de resíduos; recuperação de materiais) mais o 3900-5/00 '
+  '(descontaminação). CNAEs de energia em geral (3511-5/01, 3520-4/01) foram deliberadamente '
+  'excluídos por serem genéricos demais — trariam qualquer usina/distribuidora de qualquer fonte '
+  '(hídrica, fóssil, nuclear) e poluiriam a base; por isso energia foi tratada separadamente via '
+  'ANEEL, que classifica cada usina por fonte de combustível.')
+
+story.append(PageBreak())
+
+# ============ 3. METODO / PIPELINE ============
+P('3. Método — pipeline técnico', h1)
+P('O processamento foi feito localmente com <b>DuckDB</b> (SQL analítico sobre arquivos, sem '
+  'depender de nuvem/BigQuery), em 5 etapas sequenciais:')
+
+etapas = [
+    ('1. Extração CNPJ', 'Download dos 10 arquivos de Estabelecimentos da Receita Federal (~5 GB), processados parte por parte (baixa -> filtra SP + situação ativa + CNAE -> descarta o bruto) para não acumular dezenas de GB. Filtro aplicado direto no SQL.'),
+    ('2. Geocodificação', 'Endereços convertidos em latitude/longitude via Nominatim/OpenStreetMap (gratuito, limite de 1 req/s). Estratégia em 3 tentativas por endereço: busca estruturada -> busca por texto livre -> aproximação pelo centro do CEP. Resultados fora do bounding box de SP são descartados (match ambíguo do geocodificador).'),
+    ('3. Extração ANEEL', 'CSV público do SIGA (Sistema de Informações de Geração), filtrado por SP + origem "Biomassa" + fase "Operação". Já vem com coordenadas exatas — não precisa geocodificar. Classificado em Biogás (resíduos sólidos urbanos/animais) vs. Biomassa propriamente dita (agroindustrial/floresta).'),
+    ('4. Enriquecimento', 'Duas camadas adicionadas: (a) Região Administrativa, via tabela de referência município->RA; (b) categoria circular ISO 59000, mapeando cada CNAE/tipo de energia para Reciclagem, Bioeconomia, Valorização energética ou Tratamento/disposição.'),
+    ('5. Geração dos mapas', 'MapLibre GL JS (renderização em GPU, sem chave de API) com basemap CARTO Positron gratuito. Duas visualizações: pontos individuais coloridos e mapa de calor (heatmap) com transição suave para pontos ao aproximar zoom. Filtros por Região Administrativa, setor/atividade e categoria circular.'),
+]
+for titulo_etapa, desc in etapas:
+    P(f'<b>{titulo_etapa}</b> — {desc}', item)
+
+SP_(6)
+P('Decisões metodológicas relevantes:', h2)
+P('— <b>Bounding box de SP</b>: coordenadas fora de um retângulo geográfico generoso do estado são '
+  'descartadas (poucos casos de geocodificação ambígua que caem em outro estado).', item)
+P('— <b>Encoding</b>: tanto o arquivo da Receita Federal quanto o da ANEEL continham bytes que o '
+  'validador latin-1 do DuckDB rejeita — corrigido convertendo para UTF-8 via <i>iconv</i> antes de '
+  'processar.', item)
+P('— <b>Categoria circular não é o mesmo que CNAE bruto</b>: optei por manter "Tratamento/disposição" como '
+  'categoria separada das 4 categorias circulares mapeadas, em vez de forçar aterro/descontaminação '
+  'dentro de "Reciclagem" — são gestão linear de resíduos, não estratégia circular.', item)
+
+# ============ 4. QUALIDADE E LIMITACOES DOS DADOS ============
+story.append(PageBreak())
+P('4. Qualidade e limitações dos dados', h1)
+P(f'Da base de <b>{total_base_fmt} empresas</b>, <b>{total_geo_fmt} ({pct_geo})</b> foram '
+  f'geocodificadas com sucesso. O detalhamento por status:')
+
+dados_status = [
+    [Paragraph('Status', cel_b), Paragraph('Linhas', cel_b), Paragraph('%', cel_b)],
+    [Paragraph('Endereço estruturado (match direto)', cel), Paragraph(fmt(status_geo.get('endereco_estruturado',0)), cel), Paragraph(f"{100*status_geo.get('endereco_estruturado',0)/total_base:.1f}%", cel)],
+    [Paragraph('CEP aproximado (fallback)', cel), Paragraph(fmt(status_geo.get('cep_aproximado',0)), cel), Paragraph(f"{100*status_geo.get('cep_aproximado',0)/total_base:.1f}%", cel)],
+    [Paragraph('Endereço livre (fallback)', cel), Paragraph(fmt(status_geo.get('endereco_livre',0)), cel), Paragraph(f"{100*status_geo.get('endereco_livre',0)/total_base:.1f}%", cel)],
+    [Paragraph('Falhou (sem coordenada)', cel), Paragraph(fmt(status_geo.get('falhou',0)), cel), Paragraph(pct_falhou, cel)],
+    [Paragraph('Fora dos limites de SP (descartado)', cel), Paragraph(fmt(status_geo.get('fora_dos_limites_sp',0)), cel), Paragraph(f"{100*status_geo.get('fora_dos_limites_sp',0)/total_base:.2f}%", cel)],
+]
+tbl_status = Table(dados_status, colWidths=[9*cm, 3*cm, 3*cm])
+tbl_status.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('BACKGROUND', (0, 4), (-1, 4), VERMELHO_CLARO),
+    ('ROWBACKGROUNDS', (0, 1), (-1, 3), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+    ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+]))
+story.append(tbl_status)
+SP_(8)
+P(f'O padrão de falha (<b>{pct_falhou}</b>) concentra-se em cidades pequenas do interior, em ruas '
+  'nomeadas por pessoa que o OpenStreetMap ainda não mapeou — não é erro de processamento, é '
+  'lacuna real de cobertura do OSM em municípios menores.')
+P(f'A <b>cobertura territorial</b> (municípios com ao menos uma iniciativa mapeada) é de '
+  f'<b>{pct_cobertura}</b> (520 de 645 municípios). Os 125 municípios restantes não têm nenhuma '
+  'iniciativa identificada nesta etapa — o que reflete a fonte usada, não necessariamente ausência '
+  'real de atividade econômica de resíduos ali.')
+P('<b>Limitação estrutural mais importante</b>: das 6 categorias circulares do escopo, <b>Reuso, '
+  'Remanufatura e Logística reversa não aparecem</b> na base (0%). Isso não é uma falha de coleta — '
+  'nenhuma dessas 3 categorias tem CNAE próprio na Receita Federal. Reuso e remanufatura não são '
+  'atividades economicamente segregadas no cadastro nacional; logística reversa é uma <i>função</i> '
+  'prevista na PNRS (Lei 12.305/2010), não uma atividade-fim, exercida por empresas já classificadas '
+  'em outros CNAEs (varejo, transporte, ou os próprios CNAEs de resíduos já mapeados).')
+
+# ============ 5. CONTEUDO DOS MAPAS ============
+story.append(PageBreak())
+P('5. Conteúdo dos mapas publicados', h1)
+P('Duas visualizações interativas foram construídas sobre a mesma base de dados, com os mesmos '
+  'filtros:')
+P('<b>Mapa de pontos</b> — cada iniciativa é um ponto individual no mapa, colorido por categoria. '
+  'Ao clicar em um ponto, um popup mostra nome, CNAE ou tipo de combustível, endereço/município e, '
+  'se aplicável, um aviso de localização aproximada. Painel lateral com contadores em tempo real, '
+  'checkboxes por categoria e um seletor "colorir por": Atividade (10 CNAEs de resíduos + 2 tipos '
+  'de energia) ou Categoria circular (as 4 categorias mapeadas).', item)
+P('<b>Mapa de calor</b> — mostra densidade de iniciativas por região, útil para identificar '
+  'concentrações e vazios sem a poluição visual de milhares de pontos sobrepostos. Ao aproximar o '
+  'zoom (a partir do nível 10), os pontos individuais coloridos aparecem por cima do mapa de calor, '
+  'com transição suave.', item)
+P('Ambos os mapas têm: filtro por <b>Região Administrativa</b> (dropdown com as 16 RAs do estado), '
+  'link cruzado entre as duas visualizações, e — em telas de celular (largura até 720px) — um botão '
+  'para recolher o painel lateral e ver o mapa em tela cheia.')
+P('Tecnicamente, os mapas são arquivos HTML autocontidos (MapLibre GL JS via CDN, sem servidor '
+  'próprio necessário) publicados como GitHub Pages, com todos os dados embutidos no próprio '
+  'arquivo.')
+
+# ============ 6. INSIGHTS ============
+story.append(PageBreak())
+P('6. Insights extraídos da base atual', h1)
+
+P('6.1 Distribuição por atividade (resíduos)', h2)
+dados_cnae = [[Paragraph('CNAE', cel_b), Paragraph('Descrição', cel_b), Paragraph('Empresas', cel_b)]]
+for cod, desc in CNAE_DESC.items():
+    dados_cnae.append([Paragraph(f'{cod[:4]}-{cod[4]}/{cod[5:]}', cel), Paragraph(desc, cel), Paragraph(fmt(por_cnae.get(cod,0)), cel)])
+tbl_cnae = Table(dados_cnae, colWidths=[2.5*cm, 10.5*cm, 3*cm])
+tbl_cnae.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+    ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+]))
+story.append(tbl_cnae)
+SP_(6)
+P('Coleta de resíduos não-perigosos e recuperação de plásticos/sucata metálica dominam — coerente '
+  'com um estado altamente urbanizado e industrializado.')
+
+P('6.2 Energia: concentração geográfica clara', h2)
+P(f'Das {fmt(total_energia)} usinas, {fmt(226)} são de biomassa propriamente dita '
+  f'({mw_biomassa} MW, majoritariamente bagaço de cana) e {fmt(13)} de biogás ({mw_biogas} MW, '
+  'aterro/dejetos). A distribuição geográfica no mapa mostra concentração quase total no cinturão '
+  'canavieiro do interior (Ribeirão Preto, São José do Rio Preto, Franca) — o oposto do padrão de '
+  'resíduos sólidos, que se concentra na Grande SP. Isso sugere que <b>diagnósticos regionais de '
+  'economia circular precisam necessariamente olhar setor por setor</b>, já que um único ranking '
+  'geral esconderia essa divisão.')
+
+P('6.3 Concentração regional e "desertos circulares"', h2)
+dados_ra = [[Paragraph('Região Administrativa', cel_b), Paragraph('Iniciativas', cel_b), Paragraph('Municípios', cel_b), Paragraph('Iniciativas/Município', cel_b)]]
+for ra, n, qtd, norm in por_ra:
+    norm_fmt = f'{norm}'.replace('.', ',')
+    dados_ra.append([Paragraph(ra, cel), Paragraph(fmt(n), cel), Paragraph(str(qtd), cel), Paragraph(norm_fmt, cel)])
+tbl_ra = Table(dados_ra, colWidths=[6*cm, 3*cm, 3*cm, 4*cm])
+tbl_ra.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('BACKGROUND', (0, 1), (-1, 3), VERMELHO_CLARO),
+    ('BACKGROUND', (0, -1), (-1, -1), VERDE_CLARO),
+    ('ROWBACKGROUNDS', (0, 4), (-1, -2), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+    ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+]))
+story.append(tbl_ra)
+SP_(6)
+P('Em vermelho, as 3 RAs com menor densidade de iniciativas por município: <b>Itapeva (2,5)</b>, '
+  '<b>Registro (3,1)</b> e <b>Araçatuba (3,4)</b>. Registro (Vale do Ribeira) é historicamente a '
+  'região mais pobre e menos industrializada do estado — o achado bate com o que já se sabe da '
+  'região, o que dá credibilidade à leitura. Em verde, a <b>Grande SP</b>, com <b>93,8</b> '
+  'iniciativas por município — quase 40× a região mais carente.')
+
+P('6.4 Categoria circular: desequilíbrio estrutural', h2)
+dados_circ = [[Paragraph('Categoria', cel_b), Paragraph('Iniciativas', cel_b), Paragraph('%', cel_b)]]
+ordem_circ = ['Reciclagem', 'Valorização energética', 'Tratamento/disposição', 'Bioeconomia', 'Reuso', 'Remanufatura', 'Logística reversa']
+for cat in ordem_circ:
+    n = por_categoria.get(cat, 0)
+    dados_circ.append([Paragraph(cat, cel), Paragraph(fmt(n) if n else '0', cel), Paragraph(f'{100*n/total_mapa:.1f}%' if n else '—', cel)])
+tbl_circ = Table(dados_circ, colWidths=[7*cm, 4*cm, 3*cm])
+tbl_circ.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('BACKGROUND', (0, -3), (-1, -1), VERMELHO_CLARO),
+    ('ROWBACKGROUNDS', (0, 1), (-1, -4), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+    ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+]))
+story.append(tbl_circ)
+SP_(6)
+P('94,4% da base cai em "Reciclagem" — um resultado esperado dado que a fonte primária (CNPJ) '
+  'captura sobretudo empresas formais desse tipo de atividade, não iniciativas de reuso, '
+  'remanufatura ou logística reversa propriamente ditas (ver seção 4).')
+
+# ============ 7. CONCLUSOES ============
+story.append(PageBreak())
+P('7. Conclusões possíveis com os dados atuais', h1)
+P('— A <b>economia circular formal e registrada em SP</b>, no recorte resíduos + energia, está '
+  'fortemente concentrada na <b>Grande São Paulo</b> (41% de toda a base) e no <b>eixo Campinas–'
+  'Sorocaba</b>, refletindo o padrão geral de industrialização e urbanização do estado.', item)
+P('— Existe uma <b>divisão setorial nítida por geografia</b>: resíduos sólidos concentram-se nos '
+  'polos urbanos/metropolitanos, enquanto energia (biogás/biomassa) concentra-se no interior '
+  'agrícola — nenhuma política pública única serviria igualmente bem aos dois padrões.', item)
+P('— Há <b>evidência concreta de "desertos circulares"</b> (Itapeva, Registro, Araçatuba) que — '
+  'cruzada com o fato de Registro ser historicamente a região mais pobre do estado — sugere uma '
+  'correlação entre desenvolvimento econômico regional e presença de infraestrutura formal de '
+  'economia circular, não necessariamente uma escolha de política ambiental.', item)
+P('— A <b>base atual mede a formalização</b> da economia circular (empresas registradas, usinas '
+  'outorgadas), não a atividade circular em si. Iniciativas informais, cooperativas de catadores, '
+  'programas públicos e ações de reuso/remanufatura/logística reversa não aparecem — qualquer '
+  'leitura sobre "onde a economia circular é fraca" precisa ser lida como "onde a economia circular '
+  '<i>formal e mensurável por CNPJ</i> é fraca", que é uma pergunta mais restrita do que a do '
+  'escopo original.', item)
+
+# ============ 8. O QUE FALTA ============
+story.append(PageBreak())
+P('8. O que falta dentro do escopo do projeto', h1)
+P('Comparando o que foi construído com os 11 itens do escopo formal:')
+
+status_escopo = [
+    [Paragraph('Item do escopo', cel_b), Paragraph('Status', cel_b), Paragraph('Observação', cel_b)],
+    [Paragraph('1. Objetivo integrado (diagnóstico, políticas, benchmarking)', cel), Paragraph('Parcial', cel_parcial), Paragraph('Base de dados e mapas prontos; análise formal de políticas públicas ainda não escrita como documento à parte', cel)],
+    [Paragraph('2. Escopo geográfico por Região Administrativa', cel), Paragraph('Feito', cel_feito), Paragraph('16 RAs mapeadas e filtráveis', cel)],
+    [Paragraph('3. Três setores (resíduos, energia, logística reversa)', cel), Paragraph('2 de 3', cel_parcial), Paragraph('Logística reversa sem fonte de dado própria (não tem CNAE)', cel)],
+    [Paragraph('4. Seis categorias circulares (ISO 59000)', cel), Paragraph('4 de 6', cel_parcial), Paragraph('Reuso, Remanufatura e Logística reversa estruturalmente ausentes', cel)],
+    [Paragraph('5. Matriz de classificação (tipo, escala, maturidade, impacto)', cel), Paragraph('Não feito', cel_naofeito), Paragraph('Só temos: nome, CNAE, endereço, RA, categoria. Falta tipo (pública/ONG/academia), escala, maturidade, impacto', cel)],
+    [Paragraph('6. Múltiplas fontes', cel), Paragraph('2 de 8+', cel_parcial), Paragraph('CETESB, SNIS e cooperativas de catadores bloqueados até 25/10/2026 (apagão eleitoral); FIESP/CIESP e academia sem dado estruturado público', cel)],
+    [Paragraph('7. Limpeza e padronização', cel), Paragraph('Feito', cel_feito), Paragraph('Filtro de ativas, normalização de município, categorização circular', cel)],
+    [Paragraph('8. Georreferenciamento + Região Administrativa', cel), Paragraph('Feito', cel_feito), Paragraph('', cel)],
+    [Paragraph('9. Construção do mapa (pontos, cores, filtros, camadas extras)', cel), Paragraph('Parcial', cel_parcial), Paragraph('Pontos/calor/filtros prontos; faltam camadas de densidade populacional, infraestrutura de resíduos e polos industriais', cel)],
+    [Paragraph('10. Análise estratégica', cel), Paragraph('Feito', cel_feito), Paragraph('Documento em separado + seções 6-7 deste documento', cel)],
+    [Paragraph('11. Indicadores e KPIs', cel), Paragraph('Parcial', cel_parcial), Paragraph('Cobertura territorial, % por categoria e concentração regional prontos; maturidade média e impacto estimado não disponíveis (não são dados que CNPJ/ANEEL contêm)', cel)],
+]
+tbl_escopo = Table(status_escopo, colWidths=[6*cm, 2.3*cm, 8*cm])
+tbl_escopo.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+]))
+story.append(tbl_escopo)
+SP_(8)
+
+P('Bloqueio externo — apagão eleitoral', h2)
+P('CETESB, SNIS e o cadastro de cooperativas de catadores (SINIR) estão indisponíveis até '
+  '<b>25/10/2026</b>, por força do período de defeso eleitoral (Lei 9.504/1997, art. 73 VI "b", '
+  'Resolução TSE 23.735/2024), que suspende atualizações/publicidade em sites institucionais do '
+  'governo. Não é uma limitação técnica nossa — é uma restrição legal temporária que afeta '
+  'qualquer tentativa de acessar essas 3 fontes até a data.')
+
+P('Próximos passos recomendados', h2)
+P('— Aguardar 25/10/2026 e então integrar CETESB (Inventário Estadual de Resíduos, requer '
+  'extração de tabelas de PDF), SNIS (série histórica de saneamento) e o cadastro de cooperativas '
+  'de catadores (SINIR/CATAsampa).', item)
+P('— Buscar contato direto com FIESP/CIESP e universidades (USP/Unicamp/Unesp/SENAC) para dados '
+  'que não existem em formato aberto.', item)
+P('— Desenhar e aplicar uma pesquisa primária (questionário) para obter tipo de organização, '
+  'escala e estágio de maturidade — dados que nenhuma fonte administrativa aberta contém.', item)
+P('— Adicionar camadas de densidade populacional e polos industriais ao mapa (dados IBGE, sem '
+  'depender das fontes bloqueadas).', item)
+P('— Reavaliar se logística reversa pode ser aproximada por outros proxies (ex: empresas com '
+  'CNAE de comércio atacadista de resíduos/sucata, ou parcerias com sistemas de logística reversa '
+  'existentes por lei, como pneus e eletroeletrônicos).', item)
+
+SP_(14)
+linha()
+P('Documento gerado automaticamente a partir da base georreferenciada do projeto. '
+  'Acompanha os mapas publicados e o repositório de código.', rodape)
+
+doc = SimpleDocTemplate(SAIDA, pagesize=A4, topMargin=1.8*cm, bottomMargin=1.6*cm,
+                        leftMargin=2*cm, rightMargin=2*cm,
+                        title='Mapa de Economia Circular SP — Documento Técnico Completo',
+                        author='SENAC SP')
+doc.build(story)
+print(f'PDF gerado: {SAIDA}')
