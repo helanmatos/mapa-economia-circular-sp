@@ -2,14 +2,18 @@
 
 Mapeamento georreferenciado de iniciativas de economia circular no estado de São Paulo, construído para o projeto **Revolução Circular** (SENAC SP, Geração 2027).
 
-**[Ver o mapa interativo (pontos)](https://helanmatos.github.io/mapa-economia-circular-sp/)** · **[Ver mapa de calor](https://helanmatos.github.io/mapa-economia-circular-sp/mapa_calor.html)**
+**[Ver Hub Circular por Região Administrativa](https://helanmatos.github.io/mapa-economia-circular-sp/mapa_hub_circular.html)** · **[Ver mapa de pontos](https://helanmatos.github.io/mapa-economia-circular-sp/)** · **[Ver mapa de calor](https://helanmatos.github.io/mapa-economia-circular-sp/mapa_calor.html)**
 
 ## O que tem no mapa
 
 - **8.719 empresas** de resíduos sólidos urbanos (coleta, tratamento, recuperação de materiais), extraídas dos Dados Abertos do CNPJ da Receita Federal e geocodificadas via Nominatim/OpenStreetMap.
 - **239 usinas de energia** por biogás/biomassa em operação, via dados abertos da ANEEL (SIGA), já com coordenadas oficiais.
 - Filtro por **Região Administrativa** (as 16 RAs do estado) e por **categoria circular** (ISO 59000: Reciclagem, Bioeconomia, Valorização energética, Tratamento/disposição).
-- Duas visualizações: pontos individuais coloridos (`index.html`) e **mapa de calor** de densidade (`mapa_calor.html`), com transição suave para pontos ao aproximar o zoom.
+- Três visualizações: **Hub Circular** por RA (`mapa_hub_circular.html`, coroplético com índice de maturidade — 4 elementos: coleta, reciclagem, tratamento/disposição, orgânicos), pontos individuais coloridos (`index.html`) e **mapa de calor** de densidade (`mapa_calor.html`), com transição suave para pontos ao aproximar o zoom.
+
+### Hub Circular — índice de maturidade
+
+Reformulação proposta em reunião de produto (07/09/2026): em vez de olhar empresa por empresa, o Hub Circular agrega cada uma das 16 Regiões Administrativas por quantos dos 4 elementos de infraestrutura ela tem (Coleta, Reciclagem, Tratamento/Disposição, Orgânicos — compostagem + energia). Com os dados atuais: **12 regiões têm os 4 elementos** ("Circular completo"); **4 regiões têm 3 de 4** ("Quase completo") — Santos (falta Orgânicos), Barretos, Registro e Itapeva (falta Tratamento/Disposição nessas três). Coleta e reciclagem são praticamente universais no estado; o que realmente diferencia as regiões é a presença de tratamento/disposição formal.
 
 ## Fontes de dados
 

@@ -218,6 +218,7 @@ html = f'''<!DOCTYPE html>
   </div>
   <div class="aviso">Dê zoom para ver os pontos individuais coloridos por atividade — o mapa de calor mostra a concentração geral.</div>
   <a class="nav-link" href="mapa_economia_circular.html">Ver versão com pontos individuais →</a>
+  <a class="nav-link" href="mapa_hub_circular.html">Ver Hub Circular por RA →</a>
   </div>
 </div>
 <script>

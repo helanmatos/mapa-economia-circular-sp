@@ -287,6 +287,7 @@ html = f'''<!DOCTYPE html>
     <button id="btn-nenhum">Desmarcar todos</button>
   </div>
   <a class="nav-link" href="mapa_calor.html">Ver mapa de calor →</a>
+  <a class="nav-link" href="mapa_hub_circular.html">Ver Hub Circular por RA →</a>
   </div>
 </div>
 <script>
