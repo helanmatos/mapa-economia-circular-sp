@@ -3,5 +3,10 @@
 dados_rf/
 saida_partes/
 geo_cache.jsonl
+# caches brutos do IBGE, refeitos pelo pipeline; o que vale e o
+# geo_cache/municipios_sp_malha_com_ra.json, esse sim versionado
+geo_cache/municipios_sp_malha.json
+geo_cache/municipios_sp_nomes.json
+geo_cache/codigo_para_ra.json
 *.log
 Escopo de Construção para Mapa da Economia Circular – Estado de SP.pdf
