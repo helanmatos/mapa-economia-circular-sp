@@ -9,7 +9,7 @@ Mapeamento georreferenciado de iniciativas de economia circular no estado de Sã
 - **8.719 empresas** de resíduos sólidos urbanos (coleta, tratamento, recuperação de materiais), extraídas dos Dados Abertos do CNPJ da Receita Federal e geocodificadas via Nominatim/OpenStreetMap.
 - **239 usinas de energia** por biogás/biomassa em operação, via dados abertos da ANEEL (SIGA), já com coordenadas oficiais.
 - Filtro por **Região Administrativa** (as 16 RAs do estado) e por **categoria circular** (ISO 59000: Reciclagem, Bioeconomia, Valorização energética, Tratamento/disposição).
-- **Três temas numa aplicação só** (`index.html`), com troca instantânea entre eles — os dados são carregados uma vez e o que muda é filtro, cor e visibilidade, então a navegação não recarrega nada e preserva o enquadramento do mapa.
+- **Quatro temas numa aplicação só** (`index.html`), com troca instantânea entre eles — os dados são carregados uma vez e o que muda é filtro, cor e visibilidade, então a navegação não recarrega nada e preserva o enquadramento do mapa.
 
 ### Hub Circular — índice de maturidade
 
@@ -23,21 +23,28 @@ Uma **hachura diagonal** sobre o polígono mostra a fatia de municípios sem reg
 
 Isso substituiu a regra anterior, que pintava a RA pela presença do serviço *em algum lugar da região*: bastava um município ter tratamento para a região inteira virar "circular completo", e 12 das 16 RAs apareciam no nível máximo. O caso mais claro era a 8ª São José do Rio Preto, pintada de verde-escuro com 38,5% dos seus municípios sem nenhum registro, acima da 2ª Santos, que não tem nenhum município zerado.
 
-### As duas escalas, e por que ambas existem
+### Duas escalas, cada uma no nível em que funciona
 
-O mapa alterna entre duas leituras do mesmo dado, porque elas respondem a perguntas diferentes e discordam de propósito:
+O índice tem duas leituras, e a escala **acompanha o nível de navegação** — não é preferência, é o que os dados sustentam:
 
-**Escala 0-4 (média municipal).** Mede o quanto a infraestrutura está distribuída dentro da região. Nenhuma RA passa de classe 3.
+| Nível | Escala | Por quê |
+|---|---|---|
+| **Estado** (16 regiões) | Média municipal, 0-4 | É a única que não deixa uma região verde tendo um terço dos municípios vazio |
+| **Município** | Escada nomeada (básico / estruturado / circular) | Sem agregação, presença *é* a realidade local — e o nome comunica melhor que "2 de 4" |
 
-**Escada nomeada (estágio da cadeia).** É a leitura literal proposta na reunião — básico (coleta + reciclagem), estruturado (+ tratamento), circular (+ orgânicos) — e é *composicional*: não conta quantos serviços existem, verifica *quais*. Por ela, 12 das 16 regiões são "circulares", porque têm os 4 serviços em algum ponto do território.
+A **escada composicional** é a leitura proposta na reunião: não conta quantos serviços existem, verifica *quais*. Básico = coleta + reciclagem; estruturado = + tratamento; circular = + orgânicos. Aplicada aos 645 municípios: 23 circulares (3,6%), 46 estruturados (7,1%), 242 básicos (37,5%), **209 incipientes (32,4%)** e 125 sem nada (19,4%). Os "incipientes" têm algum serviço mas não fecham nem coleta + reciclagem — um terço do estado, que a contagem simples misturava com quem tem a base montada.
 
-A distância entre as duas é o achado. Aplicada aos 645 municípios, a escada mostra: 23 circulares (3,6%), 46 estruturados (7,1%), 242 básicos (37,5%), **209 incipientes (32,4%)** e 125 sem nenhuma infraestrutura (19,4%). Os "incipientes" são municípios que têm algum serviço mas não fecham nem coleta + reciclagem — um terço do estado, invisível na contagem simples e invisível na leitura por região.
+**Por que a escada não serve para a região.** Agregada por RA, ela volta a medir "presença em algum ponto do território" — exatamente o defeito que a média veio corrigir. Pela escada, 12 das 16 regiões são "circulares", incluindo a 9ª Araçatuba, que tem **um único** estabelecimento de tratamento e 34,9% dos municípios sem nenhum registro. No sentido oposto, a 2ª Santos, com 0% de municípios vazios, cai para "estruturado". Abrir Araçatuba no mapa mostra o problema de imediato: a região verde se desfaz em vermelhos, laranjas e um só município verde.
+
+**Por que a escada é melhor no município.** Ela prioriza o tratamento/disposição, que é o elo escasso do estado — 108 estabelecimentos, contra 3.227 de coleta e 5.326 de triagem. As duas escalas discordam em 120 dos 645 municípios: 82 que a contagem chama de "quase completo" a escada mantém em "básico" por falta de tratamento (Andradina tem coleta 4, reciclagem 4, orgânicos 1 e **zero** tratamento), e 36 que a contagem chama de "intermediário" a escada rebaixa a "incipiente" por falta de coleta.
+
+O botão de escala continua no painel para comparar as duas; ao mudar de nível ele volta ao padrão. Forçar a escada no estado exibe um aviso explicando o que aquela leitura esconde.
 
 Com a regra atual nenhuma RA alcança a classe 4. A 1ª Grande SP é a única classe 3; nove regiões ficam na classe 2 e seis na classe 1 (Registro, Presidente Prudente, Marília, São José do Rio Preto, Araçatuba e Itapeva). Coleta e reciclagem continuam praticamente universais; o que diferencia as regiões é a presença de tratamento/disposição formal e, sobretudo, o tamanho do vazio interno.
 
-## Os três temas
+## Os quatro temas
 
-**1. Hub Circular** — as 16 Regiões Administrativas coloridas por maturidade, com drill-down: clica na região e ela abre nos municípios, clica no município e aparecem os pinos de cada empresa. Duas escalas alternáveis: a numérica 0-4 (média municipal, que revela o vazio interno) e a **escada nomeada** proposta na reunião — básico (coleta + reciclagem), estruturado (+ tratamento), circular (+ orgânicos). São leituras diferentes de propósito: pela escada, 12 das 16 regiões são "circulares"; pela média municipal, nenhuma passa de classe 3.
+**1. Hub Circular** — as 16 Regiões Administrativas coloridas por maturidade, com drill-down: clica na região e ela abre nos municípios, clica no município e aparecem os pinos de cada empresa. A escala acompanha o nível: **média municipal no estado, escada nomeada no município** (ver a seção acima). O botão permite comparar as duas.
 
 **2. Tratamento de resíduos** — as 5 camadas da cadeia (coleta e movimentação, triagem e recuperação, orgânicos, tratamento e disposição, descontaminação), **combináveis entre si**: dá para ver coleta e triagem juntas, ou isolar só descontaminação. Dentro de "triagem e recuperação" há a sub-camada de material recuperado — metal, plástico e um terceiro balde honesto. Só metal e plástico têm CNAE próprio na Receita Federal; papel, vidro e construção civil caem todos no genérico 3839-4/99 e não podem ser separados por esta fonte.
 

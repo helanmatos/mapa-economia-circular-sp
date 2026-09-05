@@ -357,7 +357,17 @@ map.addControl(new maplibregl.NavigationControl(), 'top-right');
 let tema = 'hub';
 let nivel = 'estado';          // hub: estado | regiao | municipio
 let raSel = null, munSel = null, munNome = null;
-let corHub = 'classe';         // classe | estagio
+// Cada nível tem a escala que faz sentido nele, e o padrão segue a navegação:
+//   estado  -> MÉDIA municipal das RAs. A escada composicional, agregada por região,
+//              volta a esconder o vazio interno: a 9ª Araçatuba seria "Circular" com
+//              UM único estabelecimento de tratamento e 34,9% dos municípios zerados.
+//   município -> ESCADA composicional (básico/estruturado/circular). Aqui não há
+//              agregação, então presença é a realidade local — e o nome comunica
+//              melhor que "2 de 4", além de separar os 209 "incipientes" que a
+//              contagem misturava com quem tem coleta + reciclagem de fato.
+// O botão continua trocando a escala para comparar; ao mudar de nível ela volta ao padrão.
+const ESCALA_PADRAO = {estado: 'classe', regiao: 'estagio', municipio: 'estagio'};
+let corHub = ESCALA_PADRAO.estado;   // classe | estagio
 let modo = 'pontos';           // pontos | calor  (temas tratamento/biologico)
 let filtroRA = '';             // filtro global de RA nos temas de pontos
 
@@ -418,13 +428,19 @@ function htmlRegiao(p, tipo) {
   const sub = ehMun
     ? `<p class="pop-sub">${p.regiao_administrativa}</p>`
     : `<p class="pop-sub">${p.n_mun} municípios · média ${num(p.media, 2)} de 4 serviços</p>`;
+  // o município mostra SEMPRE as duas leituras: o estágio nomeia a composição da
+  // cadeia, a contagem dá a granularidade. São complementares, não alternativas.
+  const iEst = ESTAGIOS.indexOf(p.estagio);
   let cabeca;
-  if (corHub === 'estagio') {
-    const i = ESTAGIOS.indexOf(p.estagio);
-    cabeca = `<p class="pop-classe" style="color:${PALETA[i]}">${ESTAGIO_NOMES[i]}</p>`;
+  if (ehMun) {
+    cabeca = `<p class="pop-classe" style="color:${PALETA[iEst]}">${ESTAGIO_NOMES[iEst]}`
+      + `<span class="pop-ano"> · ${p.classe} de 4 serviços</span></p>`;
+  } else if (corHub === 'estagio') {
+    cabeca = `<p class="pop-classe" style="color:${PALETA[iEst]}">${ESTAGIO_NOMES[iEst]}`
+      + `<span class="pop-ano"> · presença em algum ponto da região</span></p>`;
   } else {
     cabeca = `<p class="pop-classe" style="color:${PALETA[p.classe]}">`
-      + `${ehMun ? 'Nível' : 'Classe'} ${p.classe} — ${p.classe_desc}</p>`;
+      + `Classe ${p.classe} — ${p.classe_desc}</p>`;
   }
   const ctx = (TEM_CONTEXTO && ehMun && (p.populacao || p.idhm)) ? `
     <p class="pop-info">${p.populacao ? inteiro(p.populacao) + ' habitantes' : ''}${p.populacao && p.idhm ? ' · ' : ''}${p.idhm ? 'IDHM ' + num(p.idhm, 3) : ''}</p>` : '';
@@ -529,8 +545,11 @@ function pintarHub() {
   $('#leg-estagio').style.display = corHub === 'estagio' ? '' : 'none';
   $('#leg-hachura').style.display = corHub === 'classe' ? '' : 'none';
   $('#titulo-escala').textContent = corHub === 'estagio'
-    ? 'Estágio da cadeia'
-    : (nivel === 'estado' ? 'Maturidade da região' : 'Maturidade do município');
+    ? (nivel === 'estado' ? 'Estágio da cadeia na região' : 'Estágio da cadeia no município')
+    : (nivel === 'estado' ? 'Maturidade da região (média)' : 'Serviços no município');
+  // aviso quando o usuário força a escada no estado — é a leitura que esconde o vazio
+  $('#aviso-escada').style.display =
+    (corHub === 'estagio' && nivel === 'estado') ? '' : 'none';
 }
 
 const OP_CHEIA = 0.75, OP_FRACA = 0.28;
@@ -584,14 +603,22 @@ function trilha() {
   }));
 }
 
+function escalaDoNivel() {
+  corHub = ESCALA_PADRAO[nivel];
+  document.querySelectorAll('[data-corhub]').forEach(b =>
+    b.classList.toggle('on', b.dataset.corhub === corHub));
+}
+
 function irEstado() {
   nivel = 'estado'; raSel = null; munSel = null; munNome = null;
+  escalaDoNivel();
   $('#hub-vazio').style.display = 'none';
   visibilidadeHub();
   enquadrarEstado(true);
 }
 function irRegiao(ra) {
   nivel = 'regiao'; raSel = ra; munSel = null; munNome = null;
+  escalaDoNivel();
   $('#hub-vazio').style.display = 'none';
   visibilidadeHub();
   const fs = geojsonMun.features.filter(f => f.properties.regiao_administrativa === ra);
@@ -599,6 +626,7 @@ function irRegiao(ra) {
 }
 function irMunicipio(norm, nome) {
   nivel = 'municipio'; munSel = norm; munNome = nome;
+  escalaDoNivel();
   visibilidadeHub();
   const f = geojsonMun.features.find(x => x.properties.municipio_norm === norm);
   const n = geojsonPontos.features.filter(x => x.properties.municipio_norm === norm).length;
@@ -1015,6 +1043,11 @@ HTML = '''<!DOCTYPE html>
           <div id="leg-classe">__LEG_CLASSE__</div>
           <div id="leg-nivel" style="display:none">__LEG_NIVEL__</div>
           <div id="leg-estagio" style="display:none">__LEG_ESTAGIO__</div>
+          <p class="nota" id="aviso-escada" style="display:none">
+            No estado, a escada mede <b>presença em algum ponto da região</b> — a 9ª Araçatuba
+            aparece como "Circular" tendo <b>um único</b> estabelecimento de tratamento e 34,9%
+            dos municípios sem nada. Para comparar regiões, use a escala de média.
+          </p>
           <div id="leg-hachura">
             <div class="secao">Cobertura (hachura)</div>
             <div class="leg-item"><span class="sw hach-liso"></span>
