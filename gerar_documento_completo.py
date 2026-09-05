@@ -323,7 +323,9 @@ P('É o mapa mais estratégico dos três, e nasceu da reformulação proposta na
   'Clicando numa região, ela se abre nos seus municípios, também coloridos; clicando num município, '
   'aparecem os pinos de cada empresa e usina. A navegação tem trilha (Estado - Região - Município) '
   'e botão de voltar.')
-P('<b>O índice de maturidade tem duas leituras, deliberadamente separadas:</b>')
+P('<b>O índice tem duas leituras, e a escala acompanha o nível de navegação</b> — média '
+  'municipal no estado, escada nomeada no município. Não é preferência estética; é o que os '
+  'dados sustentam, pelos motivos abaixo.')
 P(f'— <b>Nível do município</b>: quantos dos 4 serviços existem ali. Dos {n_mun_total} municípios do '
   f'estado, {dist_mun[0]} estão no nível 0, {dist_mun[1]} no nível 1, {dist_mun[2]} no nível 2, '
   f'{dist_mun[3]} no nível 3 e apenas {dist_mun[4]} no nível 4 — média estadual de {media_estadual} '
@@ -332,6 +334,27 @@ P('— <b>Classe da região</b>: a média dos seus municípios, arredondada. Nã
   'da região, e por isso os dois rótulos são escritos de formas diferentes no mapa — a região fala em '
   '"média por município", o município fala em "N de 4 serviços". A leitura literal (quais serviços '
   'existem em algum ponto da região) continua disponível no popup, em linha própria.', item)
+P('<b>A escada composicional no município.</b> A reunião descreveu a maturidade pelo que o '
+  'lugar TEM, não por quantos itens tem: básico é coleta + reciclagem, estruturado acrescenta '
+  'tratamento, circular acrescenta orgânicos. Essa leitura é melhor no município porque prioriza '
+  f'o tratamento/disposição, que é o elo escasso do estado — {fmt(conta_camada["tratamento"])} '
+  f'estabelecimentos, contra {fmt(conta_camada["coleta"])} de coleta e {fmt(conta_camada["triagem"])} '
+  'de triagem. Tratar "orgânicos" e "tratamento" como equivalentes, que é o que a contagem faz, '
+  'apaga justamente a escassez que importa.')
+P(f'Aplicada aos {n_mun_total} municípios, a escada mostra {fmt(dist_estagio["circular"])} circulares, '
+  f'{fmt(dist_estagio["estruturado"])} estruturados, {fmt(dist_estagio["basico"])} básicos, '
+  f'<b>{fmt(dist_estagio["incipiente"])} incipientes</b> e {fmt(dist_estagio["sem"])} sem nenhuma '
+  'infraestrutura. Os "incipientes" — quase um terço do estado — têm algum serviço mas não fecham '
+  'nem coleta + reciclagem; a contagem simples os misturava com quem já tem a base montada. '
+  'As duas escalas discordam em 120 municípios: 82 que a contagem chama de "quase completo" a '
+  'escada mantém em "básico" por falta de tratamento, e 36 que a contagem chama de "intermediário" '
+  'ela rebaixa a "incipiente" por falta de coleta.')
+P('<b>Por que a escada NÃO serve para a região.</b> Agregada por Região Administrativa, ela volta '
+  'a medir presença "em algum ponto do território" — exatamente o defeito que a média veio '
+  'corrigir. Por ela, 12 das 16 regiões seriam "circulares", incluindo a 9ª Araçatuba, que tem '
+  '<b>um único</b> estabelecimento de tratamento e 34,9% dos municípios sem nenhum registro; e a '
+  '2ª Santos, sem nenhum município zerado, cairia para "estruturado". No app, forçar a escada no '
+  'nível estadual exibe um aviso explicando o que aquela leitura esconde.')
 P('A escolha da média em vez da presença regional é o que dá sentido ao mapa. Pela regra anterior, '
   'bastava um único município ter tratamento para a região inteira ser pintada como "circular '
   'completa", e 12 das 16 regiões apareciam no nível máximo. O caso mais claro era a 8ª São José do '
@@ -614,7 +637,7 @@ reuniao = [
     [Paragraph('O que foi pedido na reunião', cel_b), Paragraph('Status', cel_b), Paragraph('Observação', cel_b)],
     [Paragraph('<b>Mapa 1</b> — Hub Circular por Região Administrativa, com indicador de maturidade da regional', cel),
      Paragraph('Feito', cel_feito),
-     Paragraph('Publicado, com drill-down até a empresa. Duas ressalvas de nomenclatura: a reunião falava em 3 níveis nomeados (básico / estruturado / circular) e o mapa usa 5 classes (0 a 4); e o índice conta quantos dos 4 serviços existem, sem exigir uma composição específica. Vale alinhar com a especialista.', cel)],
+     Paragraph('Publicado, com drill-down até a empresa. A escada nomeada da reunião (básico / estruturado / circular) foi implementada como leitura composicional e é o padrão no nível município; a escala 0-4 por média municipal é o padrão no nível estado, porque a escada agregada por região volta a esconder o vazio interno.', cel)],
     [Paragraph('<b>Mapa 2</b> — Tratamento de resíduos com 5 camadas (coleta, triagem, orgânicos, tratamento, descontaminação)', cel),
      Paragraph('Feito', cel_feito),
      Paragraph('Tema próprio no app, com as 5 camadas e alternância entre pontos e densidade', cel)],
@@ -644,11 +667,9 @@ tbl_reuniao.setStyle(TableStyle([
 ]))
 story.append(tbl_reuniao)
 SP_(8)
-P('Em resumo: <b>os 3 mapas temáticos estão entregues</b>, mais o cruzamento socioeconômico. '
-  'Restam dois pontos, ambos de alinhamento e não de execução: a <b>sub-camada de materiais</b>, '
-  'que a fonte só comporta para metal e plástico; e a <b>nomenclatura do índice</b> — a reunião '
-  'falou em 3 níveis nomeados e o app oferece as duas leituras (a escada nomeada e a escala 0-4), '
-  'deixando a escolha para a especialista.')
+P('Em resumo: <b>os 3 mapas temáticos estão entregues</b>, mais o cruzamento socioeconômico e a '
+  'escada nomeada. Resta um único ponto em aberto, e ele é de fonte e não de execução: a '
+  '<b>sub-camada de materiais</b>, que o CNAE só comporta para metal e plástico.')
 
 SP_(8)
 P('Bloqueio externo — apagão eleitoral', h2)
