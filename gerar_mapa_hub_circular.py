@@ -16,36 +16,25 @@ Requer:
   geo_cache/regioes_administrativas.geojson       (16 poligonos de RA, ver preparo anterior)
   geo_cache/municipios_sp_malha_com_ra.json        (645 poligonos de municipio + nome + RA)
 """
-import re
 import json
 import duckdb
+
+# a regra de maturidade (níveis, classes, paleta) mora em maturidade.py e é
+# compartilhada com o documento técnico — nunca duplicar aqui
+from enriquece import chave  # mesma chave canonica de municipio usada no join
+from maturidade import (ELEMENTOS, PALETA, NIVEL_INFO, CLASSE_INFO, apura,
+                        calcula_nivel, elementos_faltando, pinta)
 
 GEOJSON_RA = 'geo_cache/regioes_administrativas.geojson'
 GEOJSON_MUN = 'geo_cache/municipios_sp_malha_com_ra.json'
 SAIDA = 'mapa_hub_circular.html'
 
-ELEMENTOS = {
-    'coleta': ('3811400', '3812200'),
-    'reciclagem': ('3831901', '3831999', '3832700', '3839499'),
-    'tratamento_disposicao': ('3821100', '3822000', '3900500'),
-    'organicos_cnpj': ('3839401',),
-}
 CNAE_DESC = {
     '3811400': 'Coleta de resíduos não-perigosos', '3812200': 'Coleta de resíduos perigosos',
     '3821100': 'Tratamento/disposição não-perigosos', '3822000': 'Tratamento/disposição perigosos',
     '3831901': 'Recuperação de sucata de alumínio', '3831999': 'Recuperação de sucata metálica',
     '3832700': 'Recuperação de materiais plásticos', '3839401': 'Usinas de compostagem',
     '3839499': 'Recuperação de materiais (outros)', '3900500': 'Descontaminação',
-}
-# paleta das classes 0..4 — escolhida para sobreviver a impressao em preto-e-branco
-# (luminancia crescente) e a deuteranopia (o par laranja/verde-claro nao colide)
-PALETA = ['#B00020', '#E65100', '#F5C518', '#8BC34A', '#1B5E20']
-NIVEL_INFO = {
-    4: ('Circular completo (4 de 4 serviços)', PALETA[4]),
-    3: ('Quase completo (3 de 4 serviços)', PALETA[3]),
-    2: ('Intermediário (2 de 4 serviços)', PALETA[2]),
-    1: ('Básico (1 de 4 serviços)', PALETA[1]),
-    0: ('Sem infraestrutura mapeada', PALETA[0]),
 }
 ATIVIDADE_COR = {
     '3811400': '#4E79A7', '3812200': '#F28E2B', '3821100': '#E15759', '3822000': '#76B7B2',
@@ -58,95 +47,14 @@ t_res = "read_csv('empresas_sp_circular_enriquecido.csv', header=true, all_varch
 t_en = "read_csv('energia_biomassa_biogas_enriquecido.csv', header=true, all_varchar=true)"
 
 
-def calcula_nivel(coleta, reciclagem, tratamento, organicos):
-    return sum([coleta > 0, reciclagem > 0, tratamento > 0, organicos > 0])
-
-
-def pinta(niveis):
-    """Define a cor de uma unidade (RA ou municipio) a partir dos niveis dos municipios dela.
-
-    A MESMA funcao pinta os dois casos: um municipio e simplesmente o caso N=1.
-
-    A classe e a media municipal arredondada (cortes em 0,5 / 1,5 / 2,5 / 3,5) e sofre uma
-    TRAVA DE LACUNA: quanto maior a fatia de municipios sem nenhum registro, mais baixo o
-    teto da classe. A trava so rebaixa, nunca promove.
-
-    E isso que corrige o problema apontado: antes a RA era pintada pela presenca do servico
-    "em algum lugar da regiao", entao a 8a Sao Jose do Rio Preto aparecia verde-escuro com
-    40,6% dos seus municipios zerados, acima da 2a Santos, que nao tem nenhum municipio
-    zerado. Com a media + trava, Santos (media 2,11) fica classe 2 e Rio Preto
-    (media 1,10, 40,6% vazios) fica classe 1 e ainda ganha hachura forte.
-    """
-    n = len(niveis)
-    media = sum(niveis) / n
-    pct_vazio = sum(1 for v in niveis if v == 0) / n
-    classe_base = min(4, max(0, int(media + 0.5)))
-    teto = 4 if pct_vazio < 0.15 else 2 if pct_vazio < 0.30 else 1 if pct_vazio < 0.50 else 0
-    classe = min(classe_base, teto)
-    listras = 'liso' if pct_vazio < 0.15 else 'leve' if pct_vazio < 0.30 else 'forte'
-    return {
-        'classe': classe,
-        'classe_desc': NIVEL_INFO[classe][0],
-        'media': round(media, 2),
-        'pct_vazio': round(pct_vazio * 100, 1),
-        'n_mun': n,
-        'n_vazios': sum(1 for v in niveis if v == 0),
-        'dist': [sum(1 for v in niveis if v == k) for k in range(5)],
-        'listras': listras,
-        'travada': classe < classe_base,
-    }
-
-
-def elementos_faltando(coleta, reciclagem, tratamento, organicos):
-    faltando = []
-    if coleta == 0:
-        faltando.append('Coleta')
-    if reciclagem == 0:
-        faltando.append('Reciclagem')
-    if tratamento == 0:
-        faltando.append('Tratamento/Disposição')
-    if organicos == 0:
-        faltando.append('Orgânicos')
-    return ', '.join(faltando) if faltando else 'nenhum elemento'
-
-
 # ---------- base: nivel de maturidade de CADA MUNICIPIO ----------
-# calculado antes das RAs de proposito: a cor da RA e agregada a partir dos municipios dela,
-# nunca de presenca "em algum lugar da regiao" (que fazia RA com 40% de municipios zerados
-# aparecer como 'circular completo').
-import sys
-sys.path.insert(0, '.')
-from enriquece import normaliza
-
-_mun_rows = con.sql(f"""
-    SELECT municipio,
-      sum(CASE WHEN cnae_principal IN {ELEMENTOS['coleta']} THEN 1 ELSE 0 END) coleta,
-      sum(CASE WHEN cnae_principal IN {ELEMENTOS['reciclagem']} THEN 1 ELSE 0 END) reciclagem,
-      sum(CASE WHEN cnae_principal IN {ELEMENTOS['tratamento_disposicao']} THEN 1 ELSE 0 END) tratamento,
-      sum(CASE WHEN cnae_principal IN {ELEMENTOS['organicos_cnpj']} THEN 1 ELSE 0 END) organicos_compost,
-      count(*) total_residuos
-    FROM {t_res} WHERE latitude != '' GROUP BY 1
-""").fetchall()
-dados_mun = {r[0]: dict(zip(['coleta', 'reciclagem', 'tratamento', 'organicos_compost', 'total_residuos'], r[1:])) for r in _mun_rows}
-energia_por_mun = dict(con.sql(f"SELECT upper(municipio), count(*) FROM {t_en} GROUP BY 1").fetchall())
-
-geojson_mun = json.load(open(GEOJSON_MUN, encoding='utf-8'))
-niveis_por_ra = {}
-for feat in geojson_mun['features']:
-    nome_norm = normaliza(feat['properties']['nome'])
-    d = dados_mun.get(nome_norm, {'coleta': 0, 'reciclagem': 0, 'tratamento': 0, 'organicos_compost': 0, 'total_residuos': 0})
-    n_energia = energia_por_mun.get(nome_norm, 0)
-    organicos = d['organicos_compost'] + n_energia
-    nivel = calcula_nivel(d['coleta'], d['reciclagem'], d['tratamento'], organicos)
-    feat['properties'].update({
-        'nivel': nivel,
-        'coleta': d['coleta'], 'reciclagem': d['reciclagem'], 'tratamento': d['tratamento'],
-        'organicos': organicos, 'total_iniciativas': d['total_residuos'] + n_energia,
-        'faltando': elementos_faltando(d['coleta'], d['reciclagem'], d['tratamento'], organicos),
-        'municipio_norm': nome_norm,
-        **pinta([nivel]),  # municipio = caso N=1 da mesma regra de cor da RA
-    })
-    niveis_por_ra.setdefault(feat['properties']['regiao_administrativa'], []).append(nivel)
+# calculado antes das RAs de proposito: a cor da RA e agregada a partir dos municipios
+# dela, nunca de presenca "em algum lugar da regiao" (que fazia RA com 40% de
+# municipios zerados aparecer como "circular completo").
+_apuracao = apura(con)
+geojson_mun = _apuracao['geojson_mun']
+niveis_por_ra = _apuracao['niveis_por_ra']
+print(f"Usinas de energia casadas com a malha: {_apuracao['usinas_casadas']} de {_apuracao['usinas_total']}")
 
 
 # ---------- nivel 1: Regioes Administrativas ----------
@@ -170,14 +78,19 @@ for feat in geojson_ra['features']:
     n_energia = energia_por_ra.get(ra, 0)
     organicos = d['organicos_compost'] + n_energia
     # a cor da RA vem dos municipios dela (media + trava de lacuna), NAO da presenca
-    # do servico "em algum lugar da regiao" — ver docstring de pinta()
-    cor_ra = pinta(niveis_por_ra.get(ra, [0]))
+    # do servico "em algum lugar da regiao" — ver docstring de pinta().
+    # ra=True troca os rotulos: a classe da RA fala em MEDIA, nao em "N de 4 servicos".
+    cor_ra = pinta(niveis_por_ra.get(ra, [0]), ra=True)
     total_iniciativas = d['total_residuos'] + n_energia
     feat['properties'].update({
         'coleta': d['coleta'], 'reciclagem': d['reciclagem'], 'tratamento': d['tratamento'],
         'organicos': organicos, 'total_iniciativas': total_iniciativas,
         'densidade': round(total_iniciativas / cor_ra['n_mun'], 1),
         'faltando': elementos_faltando(d['coleta'], d['reciclagem'], d['tratamento'], organicos),
+        # leitura literal pedida na reuniao: quantos dos 4 servicos existem em ALGUM
+        # lugar da regiao. Convive com a classe (distribuicao interna) sem se confundir
+        # com ela — sao duas perguntas diferentes sobre a mesma regiao.
+        'servicos_presentes': calcula_nivel(d['coleta'], d['reciclagem'], d['tratamento'], organicos),
         **cor_ra,
     })
 
@@ -208,7 +121,7 @@ for r in rows_res:
         'properties': {
             'setor': 'residuos', 'categoria': d['cnae_principal'], 'nome': nome, 'endereco': endereco,
             'aprox': d['geocode_status'] == 'cep_aproximado', 'ra': d['regiao_administrativa'] or '',
-            'municipio_norm': normaliza(d['municipio']),
+            'municipio_norm': chave(d['municipio']),
         },
     })
 for r in rows_en:
@@ -222,7 +135,7 @@ for r in rows_en:
             'setor': 'energia', 'categoria': cat, 'nome': d['nome'],
             'combustivel': d['combustivel_detalhe'], 'municipio': d['municipio'],
             'potencia_mw': mw, 'proprietario': d['proprietario'] or '', 'ra': d['regiao_administrativa'] or '',
-            'municipio_norm': normaliza(d['municipio']),
+            'municipio_norm': chave(d['municipio']),
         },
     })
 geojson_pontos = {'type': 'FeatureCollection', 'features': pontos_features}
@@ -249,11 +162,19 @@ for cod, cor in ATIVIDADE_COR.items():
     match_ativ += [cod, cor]
 match_ativ.append('#999999')
 
-legenda_html = ''.join(f'''
+def monta_legenda(escala):
+    return ''.join(f'''
 <div class="legenda-item">
   <span class="swatch" style="background:{cor}"></span>
   <span class="desc"><b>{nivel}</b> · {desc}</span>
-</div>''' for nivel, (desc, cor) in sorted(NIVEL_INFO.items(), reverse=True))
+</div>''' for nivel, (desc, cor) in sorted(escala.items(), reverse=True))
+
+
+# duas escalas com o mesmo intervalo 0-4 e significados diferentes: no estado a cor e a
+# MEDIA dos municipios da regiao; dentro da regiao a cor e a CONTAGEM de servicos do
+# municipio. A legenda troca junto com o nivel de navegacao.
+legenda_ra_html = monta_legenda(CLASSE_INFO)
+legenda_mun_html = monta_legenda(NIVEL_INFO)
 
 legenda_cobertura = '''
 <div class="legenda-item">
@@ -324,8 +245,10 @@ html = f'''<!DOCTYPE html>
   .desc {{ color: #333; }}
   .barra {{ display: flex; height: 9px; border-radius: 4px; overflow: hidden; margin: 8px 0 5px; background: #eee; }}
   .barra span {{ display: block; }}
-  .popup-cobertura {{ font-size: 11px; color: #555; margin: 0 0 8px; }}
+  .popup-cobertura {{ font-size: 11px; color: #555; margin: 0 0 4px; }}
   .popup-cobertura b {{ color: #B00020; }}
+  .popup-servicos {{ font-size: 11px; color: #555; margin: 0 0 8px; }}
+  .popup-servicos b {{ color: #1B5E20; }}
   .aviso {{ font-size: 11px; color: #666; background: #FFF8E1; border-radius: 6px; padding: 8px 10px; margin-top: 12px; line-height: 1.4; }}
   .vazio {{ font-size: 12.5px; color: #C62828; background: #FFEBEE; border-radius: 6px; padding: 10px 12px; margin-top: 8px; line-height: 1.4; }}
   .nav-link {{ display: block; text-align: center; font-size: 11.5px; margin-top: 10px; padding: 7px; border: 1px solid #ccc; border-radius: 6px; color: #1B5E20; text-decoration: none; }}
@@ -358,8 +281,9 @@ html = f'''<!DOCTYPE html>
     <button id="btn-voltar">← Voltar</button>
     <div id="breadcrumb"></div>
     <div id="legenda-niveis">
-      <div class="setor-titulo">Nível de maturidade</div>
-      {legenda_html}
+      <div class="setor-titulo" id="titulo-escala">Maturidade da região</div>
+      <div id="escala-ra">{legenda_ra_html}</div>
+      <div id="escala-mun" style="display:none">{legenda_mun_html}</div>
       <div class="setor-titulo">Cobertura (hachura)</div>
       {legenda_cobertura}
       <p class="dica">Clique numa região para ver os municípios; clique num município para ver as empresas.</p>
@@ -469,7 +393,18 @@ function atualizarBreadcrumb() {{
 const OPACIDADE_CHEIA = 0.75;
 const OPACIDADE_ESMAECIDA = 0.28;
 
+// no estado a cor e a MEDIA dos municipios da RA; dentro da regiao e a CONTAGEM de
+// servicos do municipio. Mesma faixa 0-4, significados diferentes -> a legenda troca.
+function trocarEscalaLegenda() {{
+  const noEstado = nivelAtual === 'estado';
+  document.getElementById('titulo-escala').textContent =
+    noEstado ? 'Maturidade da região' : 'Maturidade do município';
+  document.getElementById('escala-ra').style.display = noEstado ? '' : 'none';
+  document.getElementById('escala-mun').style.display = noEstado ? 'none' : '';
+}}
+
 function aplicarVisibilidade() {{
+  trocarEscalaLegenda();
   const vis = (id, v) => {{ if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v ? 'visible' : 'none'); }};
   const noEstado = nivelAtual === 'estado';
   const naRegiao = nivelAtual === 'regiao';
@@ -641,7 +576,8 @@ function iniciarMapa() {{
       ? ` <span style="color:#555;font-weight:400">(rebaixada pela cobertura)</span>` : '';
     const cobertura = ehMunicipio ? '' : `
       ${{barraDistribuicao(lista(p.dist), p.n_mun)}}
-      <p class="popup-cobertura"><b>${{p.n_vazios}} de ${{p.n_mun}} municípios (${{num1(p.pct_vazio)}}%)</b> sem nenhum registro</p>`;
+      <p class="popup-cobertura"><b>${{p.n_vazios}} de ${{p.n_mun}} municípios (${{num1(p.pct_vazio)}}%)</b> sem nenhum registro</p>
+      <p class="popup-servicos">Serviços presentes em algum ponto da região: <b>${{p.servicos_presentes}} de 4</b></p>`;
     const tituloTabela = ehMunicipio ? '' : '<tr><td colspan="2" class="popup-sub">Total de estabelecimentos na região</td></tr>';
     return `
       <p class="popup-nome">${{titulo}}</p>
@@ -667,9 +603,25 @@ function iniciarMapa() {{
       .setHTML(popupRegiaoHTML(p, 'ra') + '<p class="dica">Clique para abrir esta região →</p>').addTo(map);
   }});
   map.on('mouseleave', 'ra-fill', () => popupRegiao.remove());
+
+  // Em tela sem hover (celular/tablet) o popup nunca chegaria a aparecer: o toque ia
+  // direto para o clique e a pessoa entrava na regiao sem nunca ver a infraestrutura
+  // dela. Nesses aparelhos o primeiro toque mostra os dados e o segundo entra.
+  const semHover = window.matchMedia('(hover: none)').matches;
+  let aguardandoToque = null;
+
   map.on('click', 'ra-fill', (e) => {{
+    const p = e.features[0].properties;
+    if (semHover && aguardandoToque !== p.regiao_administrativa) {{
+      aguardandoToque = p.regiao_administrativa;
+      popupRegiao.setLngLat(e.lngLat)
+        .setHTML(popupRegiaoHTML(p, 'ra') + '<p class="dica">Toque de novo para abrir esta região →</p>')
+        .addTo(map);
+      return;
+    }}
+    aguardandoToque = null;
     popupRegiao.remove();
-    irParaRegiao(e.features[0].properties.regiao_administrativa);
+    irParaRegiao(p.regiao_administrativa);
   }});
 
   // no nivel 'municipio' o poligono fica so como contexto esmaecido: nao mostra popup nem re-entra
@@ -682,8 +634,16 @@ function iniciarMapa() {{
   map.on('mouseleave', 'municipios-fill', () => popupRegiao.remove());
   map.on('click', 'municipios-fill', (e) => {{
     if (nivelAtual !== 'regiao') return;
-    popupRegiao.remove();
     const p = e.features[0].properties;
+    if (semHover && aguardandoToque !== p.municipio_norm) {{
+      aguardandoToque = p.municipio_norm;
+      popupRegiao.setLngLat(e.lngLat)
+        .setHTML(popupRegiaoHTML(p, 'municipio') + '<p class="dica">Toque de novo para ver as empresas →</p>')
+        .addTo(map);
+      return;
+    }}
+    aguardandoToque = null;
+    popupRegiao.remove();
     irParaMunicipio(p.municipio_norm, p.nome);
   }});
 
