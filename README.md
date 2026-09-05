@@ -13,7 +13,15 @@ Mapeamento georreferenciado de iniciativas de economia circular no estado de Sã
 
 ### Hub Circular — índice de maturidade
 
-Reformulação proposta em reunião de produto (07/09/2026): em vez de olhar empresa por empresa, o Hub Circular agrega cada uma das 16 Regiões Administrativas por quantos dos 4 elementos de infraestrutura ela tem (Coleta, Reciclagem, Tratamento/Disposição, Orgânicos — compostagem + energia). Com os dados atuais: **12 regiões têm os 4 elementos** ("Circular completo"); **4 regiões têm 3 de 4** ("Quase completo") — Santos (falta Orgânicos), Barretos, Registro e Itapeva (falta Tratamento/Disposição nessas três). Coleta e reciclagem são praticamente universais no estado; o que realmente diferencia as regiões é a presença de tratamento/disposição formal.
+Reformulação proposta em reunião de produto (07/09/2026): em vez de olhar empresa por empresa, o Hub Circular mede quantos dos 4 elementos de infraestrutura existem em cada lugar — Coleta, Reciclagem, Tratamento/Disposição e Orgânicos (compostagem + energia).
+
+O **nível do município** é a contagem direta desses 4 elementos. Dos 645 municípios: 137 no nível 0, 174 no nível 1, 211 no nível 2, 104 no nível 3 e apenas 19 no nível 4.
+
+A **classe da Região Administrativa** é a média dos municípios dela, arredondada, sujeita a uma **trava de lacuna**: quanto maior a fatia de municípios sem nenhum registro, mais baixo o teto da classe (a partir de 15% o teto é 2, de 30% é 1, de 50% é 0). A trava só rebaixa, nunca promove. Uma hachura diagonal sobre o polígono mostra essa fatia — é um segundo canal, independente da cor, e o único que sobrevive à impressão em preto-e-branco.
+
+Isso substituiu a regra anterior, que pintava a RA pela presença do serviço *em algum lugar da região*: bastava um município ter tratamento para a região inteira virar "circular completo", e 12 das 16 RAs apareciam no nível máximo. O caso mais claro era a 8ª São José do Rio Preto, pintada de verde-escuro com 40,6% dos seus municípios sem nenhum registro, acima da 2ª Santos, que não tem nenhum município zerado.
+
+Com a regra atual nenhuma RA alcança a classe 4. A 1ª Grande SP é a única classe 3; seis regiões ficam na classe 2 (Santos, Campinas, Ribeirão Preto, Sorocaba, São José dos Campos e Central) e nove na classe 1. Nove das 16 recebem hachura — cinco leve e quatro forte, todas no oeste e sudoeste do estado. Coleta e reciclagem continuam praticamente universais; o que diferencia as regiões é a presença de tratamento/disposição formal e, sobretudo, o tamanho do vazio interno.
 
 ## Fontes de dados
 
