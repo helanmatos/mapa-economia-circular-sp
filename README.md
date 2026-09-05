@@ -15,13 +15,15 @@ Mapeamento georreferenciado de iniciativas de economia circular no estado de Sã
 
 Reformulação proposta em reunião de produto (07/09/2026): em vez de olhar empresa por empresa, o Hub Circular mede quantos dos 4 elementos de infraestrutura existem em cada lugar — Coleta, Reciclagem, Tratamento/Disposição e Orgânicos (compostagem + energia).
 
-O **nível do município** é a contagem direta desses 4 elementos. Dos 645 municípios: 137 no nível 0, 174 no nível 1, 211 no nível 2, 104 no nível 3 e apenas 19 no nível 4.
+O **nível do município** é a contagem direta desses 4 elementos. Dos 645 municípios: 125 no nível 0, 171 no nível 1, 196 no nível 2, 130 no nível 3 e apenas 23 no nível 4 — média estadual de 1,62 serviço por município.
 
-A **classe da Região Administrativa** é a média dos municípios dela, arredondada, sujeita a uma **trava de lacuna**: quanto maior a fatia de municípios sem nenhum registro, mais baixo o teto da classe (a partir de 15% o teto é 2, de 30% é 1, de 50% é 0). A trava só rebaixa, nunca promove. Uma hachura diagonal sobre o polígono mostra essa fatia — é um segundo canal, independente da cor, e o único que sobrevive à impressão em preto-e-branco.
+A **classe da Região Administrativa** é a média dos municípios dela, arredondada, sujeita a uma **trava de lacuna**: quanto maior a fatia de municípios sem nenhum registro, mais baixo o teto da classe (a partir de 15% o teto é 2, de 30% é 1, de 50% é 0). A trava só rebaixa, nunca promove. Vale registrar que, **com os dados atuais, a trava não chega a ser acionada em nenhuma das 16 RAs** — ela é uma salvaguarda contra uma região com média alta concentrada em poucos municípios, situação que hoje não ocorre. O que efetivamente corrige a leitura é a troca da presença regional pela média municipal.
 
-Isso substituiu a regra anterior, que pintava a RA pela presença do serviço *em algum lugar da região*: bastava um município ter tratamento para a região inteira virar "circular completo", e 12 das 16 RAs apareciam no nível máximo. O caso mais claro era a 8ª São José do Rio Preto, pintada de verde-escuro com 40,6% dos seus municípios sem nenhum registro, acima da 2ª Santos, que não tem nenhum município zerado.
+Uma **hachura diagonal** sobre o polígono mostra a fatia de municípios sem registro — um segundo canal, independente da cor, e o único que sobrevive à impressão em preto-e-branco. Oito RAs saem lisas, cinco com hachura leve e três com hachura forte.
 
-Com a regra atual nenhuma RA alcança a classe 4. A 1ª Grande SP é a única classe 3; seis regiões ficam na classe 2 (Santos, Campinas, Ribeirão Preto, Sorocaba, São José dos Campos e Central) e nove na classe 1. Nove das 16 recebem hachura — cinco leve e quatro forte, todas no oeste e sudoeste do estado. Coleta e reciclagem continuam praticamente universais; o que diferencia as regiões é a presença de tratamento/disposição formal e, sobretudo, o tamanho do vazio interno.
+Isso substituiu a regra anterior, que pintava a RA pela presença do serviço *em algum lugar da região*: bastava um município ter tratamento para a região inteira virar "circular completo", e 12 das 16 RAs apareciam no nível máximo. O caso mais claro era a 8ª São José do Rio Preto, pintada de verde-escuro com 38,5% dos seus municípios sem nenhum registro, acima da 2ª Santos, que não tem nenhum município zerado.
+
+Com a regra atual nenhuma RA alcança a classe 4. A 1ª Grande SP é a única classe 3; nove regiões ficam na classe 2 e seis na classe 1 (Registro, Presidente Prudente, Marília, São José do Rio Preto, Araçatuba e Itapeva). Coleta e reciclagem continuam praticamente universais; o que diferencia as regiões é a presença de tratamento/disposição formal e, sobretudo, o tamanho do vazio interno.
 
 ## Fontes de dados
 

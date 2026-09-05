@@ -8,7 +8,10 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
                                 TableStyle, HRFlowable, PageBreak)
 
+from maturidade import apura, NIVEL_INFO, CLASSE_INFO
+
 SAIDA = 'documento_completo_mapa_economia_circular.pdf'
+DATA_DOC = '05/09/2026'
 
 VERDE = colors.HexColor('#1B5E20')
 VERDE_MED = colors.HexColor('#2E7D32')
@@ -72,6 +75,27 @@ pct_geo = f'{100*total_geo/total_base:.1f}%'
 pct_falhou = f'{100*status_geo.get("falhou",0)/total_base:.1f}%'
 pct_cobertura = '80,6%'
 
+# indice de maturidade: vem do MESMO modulo que gera o mapa, para o documento nunca
+# divergir do que esta publicado
+mat = apura(con)
+dist_mun = mat['dist_municipal']
+n_mun_total = mat['total_municipios']
+media_estadual = f"{mat['media_estadual']:.2f}".replace('.', ',')
+classes_ra = mat['classes_ra']
+ras_por_classe = {}
+for _nome, _c in classes_ra.items():
+    ras_por_classe.setdefault(_c['classe'], []).append(_nome)
+ras_por_hachura = {}
+for _nome, _c in classes_ra.items():
+    ras_por_hachura.setdefault(_c['listras'], []).append(_nome)
+mun_sem_registro = dist_mun[0]
+pct_sem_registro = f'{100*mun_sem_registro/n_mun_total:.1f}%'
+
+
+def num(v, casas=1):
+    """Formata numero com virgula decimal SEM tocar na pontuacao do texto ao redor."""
+    return f'{v:.{casas}f}'.replace('.', ',')
+
 ss = getSampleStyleSheet()
 h1 = ParagraphStyle('h1', parent=ss['Heading1'], textColor=VERDE, fontSize=15, spaceBefore=18, spaceAfter=7)
 h2 = ParagraphStyle('h2', parent=ss['Heading2'], textColor=VERDE_MED, fontSize=11.5, spaceBefore=10, spaceAfter=4)
@@ -95,7 +119,7 @@ def linha(cor=colors.HexColor('#CCCCCC')): story.append(HRFlowable(width='100%',
 # ============ CAPA / SUMARIO EXECUTIVO ============
 P('Mapa de Economia Circular', titulo)
 P('Estado de São Paulo — Documento Técnico Completo', sub)
-P('Processo, dados, método, insights e lacunas · Revolução Circular, Geração 2027 (GD 1) · SENAC SP · 07/07/2026', sub)
+P(f'Processo, dados, método, insights e lacunas · Revolução Circular, Geração 2027 (GD 1) · SENAC SP · {DATA_DOC}', sub)
 SP_(6)
 story.append(HRFlowable(width='100%', thickness=2, color=VERDE_MED, spaceAfter=12))
 
@@ -111,10 +135,14 @@ P(f'Este documento descreve, de forma completa, o trabalho realizado até o mome
   f'biogás/biomassa via ANEEL, agregadas por <b>16 Regiões Administrativas</b> e classificadas em '
   f'<b>4 categorias circulares</b> (ISO 59000), somando <b>{total_mapa_fmt} iniciativas</b> '
   f'georreferenciadas com cobertura de <b>{pct_cobertura}</b> dos municípios do estado. Os dados '
-  f'estão publicados em dois mapas interativos (pontos individuais e mapa de calor).', resumo_box)
+  f'estão publicados em <b>três mapas interativos</b>: o Hub Circular por Região Administrativa '
+  f'(com índice de maturidade e navegação Estado - Região - Município - empresas), o mapa de '
+  f'pontos individuais e o mapa de calor.', resumo_box)
 
 SP_(10)
 P('Mapas publicados:', h2)
+P('— Hub Circular por Região Administrativa: <link href="https://helanmatos.github.io/mapa-economia-circular-sp/mapa_hub_circular.html">'
+  'helanmatos.github.io/mapa-economia-circular-sp/mapa_hub_circular.html</link>', item)
 P('— Mapa de pontos: <link href="https://helanmatos.github.io/mapa-economia-circular-sp/">'
   'helanmatos.github.io/mapa-economia-circular-sp</link>', item)
 P('— Mapa de calor: <link href="https://helanmatos.github.io/mapa-economia-circular-sp/mapa_calor.html">'
@@ -184,7 +212,8 @@ etapas = [
     ('2. Geocodificação', 'Endereços convertidos em latitude/longitude via Nominatim/OpenStreetMap (gratuito, limite de 1 req/s). Estratégia em 3 tentativas por endereço: busca estruturada -> busca por texto livre -> aproximação pelo centro do CEP. Resultados fora do bounding box de SP são descartados (match ambíguo do geocodificador).'),
     ('3. Extração ANEEL', 'CSV público do SIGA (Sistema de Informações de Geração), filtrado por SP + origem "Biomassa" + fase "Operação". Já vem com coordenadas exatas — não precisa geocodificar. Classificado em Biogás (resíduos sólidos urbanos/animais) vs. Biomassa propriamente dita (agroindustrial/floresta).'),
     ('4. Enriquecimento', 'Duas camadas adicionadas: (a) Região Administrativa, via tabela de referência município->RA; (b) categoria circular ISO 59000, mapeando cada CNAE/tipo de energia para Reciclagem, Bioeconomia, Valorização energética ou Tratamento/disposição.'),
-    ('5. Geração dos mapas', 'MapLibre GL JS (renderização em GPU, sem chave de API) com basemap CARTO Positron gratuito. Duas visualizações: pontos individuais coloridos e mapa de calor (heatmap) com transição suave para pontos ao aproximar zoom. Filtros por Região Administrativa, setor/atividade e categoria circular.'),
+    ('5. Índice de maturidade', 'Para cada um dos 645 municípios, conta quantos dos 4 serviços da cadeia existem ali (coleta, reciclagem, tratamento/disposição, orgânicos). A classe de cada Região Administrativa é a média dos seus municípios, arredondada. Depende de casar o nome do município entre três fontes com grafias diferentes — ver seção 4.'),
+    ('6. Geração dos mapas', 'MapLibre GL JS (renderização em GPU, sem chave de API) com basemap CARTO Positron gratuito. Três visualizações: Hub Circular por Região Administrativa (coroplético, com drill-down até a empresa), pontos individuais coloridos e mapa de calor (heatmap) com transição suave para pontos ao aproximar zoom. Filtros por Região Administrativa, setor/atividade e categoria circular.'),
 ]
 for titulo_etapa, desc in etapas:
     P(f'<b>{titulo_etapa}</b> — {desc}', item)
@@ -232,6 +261,16 @@ P(f'A <b>cobertura territorial</b> (municípios com ao menos uma iniciativa mape
   f'<b>{pct_cobertura}</b> (520 de 645 municípios). Os 125 municípios restantes não têm nenhuma '
   'iniciativa identificada nesta etapa — o que reflete a fonte usada, não necessariamente ausência '
   'real de atividade econômica de resíduos ali.')
+P('<b>Casamento de nomes entre fontes</b>: as três fontes grafam o mesmo município de formas '
+  'diferentes — a Receita Federal em maiúsculas sem acento, a ANEEL com acento e capitalização '
+  'normal, o IBGE com a grafia oficial. Duas delas ainda divergem entre si em dois municípios '
+  '(Luis/Luiz Antônio e São João do Pau d\'Alho, com e sem hífen), e a ANEEL usa acento agudo '
+  'solto no lugar do apóstrofo em Santa Bárbara d\'Oeste. Todo cruzamento passa por uma única '
+  'chave canônica; normalizar só um dos lados faz o cruzamento falhar em silêncio, sem erro e sem '
+  'linha faltando — apenas com um número menor. Foi o que aconteceu numa versão anterior deste '
+  'índice: 105 das 239 usinas de energia (44%, todas em municípios acentuados) ficavam fora do '
+  'cálculo de maturidade. Corrigido, o índice passou a casar 238 das 239 usinas — a única que '
+  'sobra tem "Não Informado" no campo de município na origem.')
 P('<b>Limitação estrutural mais importante</b>: das 6 categorias circulares do escopo, <b>Reuso, '
   'Remanufatura e Logística reversa não aparecem</b> na base (0%). Isso não é uma falha de coleta — '
   'nenhuma dessas 3 categorias tem CNAE próprio na Receita Federal. Reuso e remanufatura não são '
@@ -242,8 +281,40 @@ P('<b>Limitação estrutural mais importante</b>: das 6 categorias circulares do
 # ============ 5. CONTEUDO DOS MAPAS ============
 story.append(PageBreak())
 P('5. Conteúdo dos mapas publicados', h1)
-P('Duas visualizações interativas foram construídas sobre a mesma base de dados, com os mesmos '
+P('Três visualizações interativas foram construídas sobre a mesma base de dados, com os mesmos '
   'filtros:')
+
+P('5.1 Hub Circular por Região Administrativa', h2)
+P('É o mapa mais estratégico dos três, e nasceu da reformulação proposta na reunião de produto de '
+  '07/09/2026: em vez de despejar 8.958 pontos na tela, olhar primeiro a infraestrutura de cada '
+  'região. O estado aparece dividido nas 16 Regiões Administrativas, coloridas por maturidade. '
+  'Clicando numa região, ela se abre nos seus municípios, também coloridos; clicando num município, '
+  'aparecem os pinos de cada empresa e usina. A navegação tem trilha (Estado - Região - Município) '
+  'e botão de voltar.')
+P('<b>O índice de maturidade tem duas leituras, deliberadamente separadas:</b>')
+P(f'— <b>Nível do município</b>: quantos dos 4 serviços existem ali. Dos {n_mun_total} municípios do '
+  f'estado, {dist_mun[0]} estão no nível 0, {dist_mun[1]} no nível 1, {dist_mun[2]} no nível 2, '
+  f'{dist_mun[3]} no nível 3 e apenas {dist_mun[4]} no nível 4 — média estadual de {media_estadual} '
+  f'serviço por município.', item)
+P('— <b>Classe da região</b>: a média dos seus municípios, arredondada. Não é a contagem de serviços '
+  'da região, e por isso os dois rótulos são escritos de formas diferentes no mapa — a região fala em '
+  '"média por município", o município fala em "N de 4 serviços". A leitura literal (quais serviços '
+  'existem em algum ponto da região) continua disponível no popup, em linha própria.', item)
+P('A escolha da média em vez da presença regional é o que dá sentido ao mapa. Pela regra anterior, '
+  'bastava um único município ter tratamento para a região inteira ser pintada como "circular '
+  'completa", e 12 das 16 regiões apareciam no nível máximo. O caso mais claro era a 8ª São José do '
+  'Rio Preto, pintada de verde-escuro tendo 38,5% dos seus municípios sem nenhum registro, enquanto '
+  'a 2ª Santos, sem nenhum município zerado, aparecia abaixo dela.')
+P('Uma <b>hachura diagonal</b> sobre o polígono codifica a fatia de municípios sem nenhum registro — '
+  'um segundo canal, independente da cor, e o único que sobrevive à impressão em preto-e-branco. '
+  f"Hoje {len(ras_por_hachura.get('liso', []))} regiões saem lisas, "
+  f"{len(ras_por_hachura.get('leve', []))} com hachura leve e {len(ras_por_hachura.get('forte', []))} "
+  'com hachura forte. Há ainda uma trava que rebaixa a classe de regiões muito vazias; vale registrar '
+  'que, com os dados atuais, <b>ela não chega a ser acionada em nenhuma das 16 regiões</b> — é uma '
+  'salvaguarda para o caso de uma região com média alta concentrada em poucos municípios, situação '
+  'que hoje não ocorre.')
+
+P('5.2 Mapa de pontos e mapa de calor', h2)
 P('<b>Mapa de pontos</b> — cada iniciativa é um ponto individual no mapa, colorido por categoria. '
   'Ao clicar em um ponto, um popup mostra nome, CNAE ou tipo de combustível, endereço/município e, '
   'se aplicável, um aviso de localização aproximada. Painel lateral com contadores em tempo real, '
@@ -253,9 +324,11 @@ P('<b>Mapa de calor</b> — mostra densidade de iniciativas por região, útil p
   'concentrações e vazios sem a poluição visual de milhares de pontos sobrepostos. Ao aproximar o '
   'zoom (a partir do nível 10), os pontos individuais coloridos aparecem por cima do mapa de calor, '
   'com transição suave.', item)
-P('Ambos os mapas têm: filtro por <b>Região Administrativa</b> (dropdown com as 16 RAs do estado), '
-  'link cruzado entre as duas visualizações, e — em telas de celular (largura até 720px) — um botão '
-  'para recolher o painel lateral e ver o mapa em tela cheia.')
+P('Os três mapas têm: filtro por <b>Região Administrativa</b> (dropdown com as 16 RAs do estado), '
+  'link cruzado entre as visualizações, e — em telas de celular (largura até 720px) — um botão '
+  'para recolher o painel lateral e ver o mapa em tela cheia. No Hub Circular, como em tela sem '
+  'hover o popup nunca apareceria, o primeiro toque numa região mostra os dados e o segundo entra '
+  'nela.')
 P('Tecnicamente, os mapas são arquivos HTML autocontidos (MapLibre GL JS via CDN, sem servidor '
   'próprio necessário) publicados como GitHub Pages, com todos os dados embutidos no próprio '
   'arquivo.')
@@ -334,6 +407,49 @@ P('94,4% da base cai em "Reciclagem" — um resultado esperado dado que a fonte 
   'captura sobretudo empresas formais desse tipo de atividade, não iniciativas de reuso, '
   'remanufatura ou logística reversa propriamente ditas (ver seção 4).')
 
+P('6.5 Maturidade: o vazio está dentro das regiões, não entre elas', h2)
+dados_mat = [[Paragraph('Nível do município', cel_b), Paragraph('Municípios', cel_b),
+              Paragraph('%', cel_b), Paragraph('Leitura', cel_b)]]
+leitura_nivel = {
+    0: 'Nenhum dos 4 serviços mapeado',
+    1: 'Apenas um serviço (quase sempre coleta ou reciclagem)',
+    2: 'Dois serviços',
+    3: 'Três serviços — falta um elo',
+    4: 'Cadeia completa no próprio município',
+}
+for k in range(4, -1, -1):
+    dados_mat.append([Paragraph(f'{k} — {NIVEL_INFO[k][0].split(" (")[0]}', cel),
+                      Paragraph(fmt(dist_mun[k]), cel),
+                      Paragraph(f'{100*dist_mun[k]/n_mun_total:.1f}%', cel),
+                      Paragraph(leitura_nivel[k], cel)])
+tbl_mat = Table(dados_mat, colWidths=[4.6*cm, 2.4*cm, 1.8*cm, 7.2*cm])
+tbl_mat.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('BACKGROUND', (0, 1), (-1, 1), VERDE_CLARO),
+    ('BACKGROUND', (0, -1), (-1, -1), VERMELHO_CLARO),
+    ('ROWBACKGROUNDS', (0, 2), (-1, -2), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('ALIGN', (1, 0), (2, -1), 'RIGHT'),
+    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+]))
+story.append(tbl_mat)
+SP_(6)
+P(f'Este é o achado mais forte do Hub Circular, e ele só aparece quando se desce ao município. '
+  f'Apenas <b>{dist_mun[4]} municípios em {n_mun_total}</b> ({100*dist_mun[4]/n_mun_total:.1f}%) têm a '
+  f'cadeia completa, enquanto <b>{mun_sem_registro}</b> ({pct_sem_registro}) não têm nenhum dos quatro '
+  f'serviços. A média estadual é de {media_estadual} serviço por município.')
+P('No agregado por região o quadro parece muito melhor do que é: <b>todas as 16 Regiões '
+  'Administrativas têm pelo menos 3 dos 4 serviços presentes em algum ponto do seu território</b>, e '
+  '12 delas têm os 4. Ou seja, olhando só a região, o estado inteiro pareceria resolvido. A distância '
+  'entre essas duas leituras — região aparentemente completa, municípios majoritariamente incompletos '
+  '— é a informação útil: <b>o problema em São Paulo não é a ausência de infraestrutura circular na '
+  'região, é a distância até ela dentro da própria região.</b>')
+P('Isso muda o tipo de política que faz sentido. Se o vazio fosse entre regiões, a resposta seria '
+  'levar infraestrutura para as regiões desassistidas. Como o vazio é interno, a resposta passa mais '
+  'por consórcios intermunicipais, logística de transbordo e escala compartilhada do que por novas '
+  'instalações em cada município — algo que a leitura por região, sozinha, esconderia.')
+
 # ============ 7. CONCLUSOES ============
 story.append(PageBreak())
 P('7. Conclusões possíveis com os dados atuais', h1)
@@ -369,9 +485,9 @@ status_escopo = [
     [Paragraph('6. Múltiplas fontes', cel), Paragraph('2 de 8+', cel_parcial), Paragraph('CETESB, SNIS e cooperativas de catadores bloqueados até 25/10/2026 (apagão eleitoral); FIESP/CIESP e academia sem dado estruturado público', cel)],
     [Paragraph('7. Limpeza e padronização', cel), Paragraph('Feito', cel_feito), Paragraph('Filtro de ativas, normalização de município, categorização circular', cel)],
     [Paragraph('8. Georreferenciamento + Região Administrativa', cel), Paragraph('Feito', cel_feito), Paragraph('', cel)],
-    [Paragraph('9. Construção do mapa (pontos, cores, filtros, camadas extras)', cel), Paragraph('Parcial', cel_parcial), Paragraph('Pontos/calor/filtros prontos; faltam camadas de densidade populacional, infraestrutura de resíduos e polos industriais', cel)],
+    [Paragraph('9. Construção do mapa (pontos, cores, filtros, camadas extras)', cel), Paragraph('Parcial', cel_parcial), Paragraph('Pontos, calor, Hub Circular por RA com drill-down e filtros prontos; faltam camadas de densidade populacional, IDH e polos industriais', cel)],
     [Paragraph('10. Análise estratégica', cel), Paragraph('Feito', cel_feito), Paragraph('Documento em separado + seções 6-7 deste documento', cel)],
-    [Paragraph('11. Indicadores e KPIs', cel), Paragraph('Parcial', cel_parcial), Paragraph('Cobertura territorial, % por categoria e concentração regional prontos; maturidade média e impacto estimado não disponíveis (não são dados que CNPJ/ANEEL contêm)', cel)],
+    [Paragraph('11. Indicadores e KPIs', cel), Paragraph('Parcial', cel_parcial), Paragraph('Cobertura territorial, % por categoria, concentração regional e índice de maturidade de infraestrutura prontos. Atenção: o escopo pede maturidade DA INICIATIVA (ideia, piloto, operação), que é outra coisa e não existe em CNPJ/ANEEL; impacto estimado também não', cel)],
 ]
 tbl_escopo = Table(status_escopo, colWidths=[6*cm, 2.3*cm, 8*cm])
 tbl_escopo.setStyle(TableStyle([
@@ -384,6 +500,49 @@ tbl_escopo.setStyle(TableStyle([
 story.append(tbl_escopo)
 SP_(8)
 
+P('Reformulação pedida na reunião de 07/09/2026', h2)
+P('Além dos 11 itens do escopo formal, a reunião de produto definiu uma reformulação em três mapas '
+  'temáticos. O quadro abaixo é o estado real dessa reformulação:')
+
+reuniao = [
+    [Paragraph('O que foi pedido na reunião', cel_b), Paragraph('Status', cel_b), Paragraph('Observação', cel_b)],
+    [Paragraph('<b>Mapa 1</b> — Hub Circular por Região Administrativa, com indicador de maturidade da regional', cel),
+     Paragraph('Feito', cel_feito),
+     Paragraph('Publicado, com drill-down até a empresa. Duas ressalvas de nomenclatura: a reunião falava em 3 níveis nomeados (básico / estruturado / circular) e o mapa usa 5 classes (0 a 4); e o índice conta quantos dos 4 serviços existem, sem exigir uma composição específica. Vale alinhar com a especialista.', cel)],
+    [Paragraph('<b>Mapa 2</b> — Tratamento de resíduos com 5 camadas (coleta, triagem, orgânicos, tratamento, descontaminação)', cel),
+     Paragraph('Não feito', cel_naofeito),
+     Paragraph('Todos os dados necessários já estão na base (o CNAE de cada estabelecimento mapeia direto nas 5 camadas). É trabalho de visualização, não de coleta.', cel)],
+    [Paragraph('Camadas do Mapa 2 combináveis entre si', cel),
+     Paragraph('Não feito', cel_naofeito),
+     Paragraph('Depende do Mapa 2. Tecnicamente simples: os mapas atuais já combinam filtros por categoria.', cel)],
+    [Paragraph('Sub-camada de materiais (metal, plástico, papel, vidro, orgânico, construção civil)', cel),
+     Paragraph('Inviável como pedido', cel_naofeito),
+     Paragraph('Só metal (3831-9/01 e 3831-9/99) e plástico (3832-7/00) têm CNAE próprio. Papel, vidro e construção civil caem todos no genérico 3839-4/99 e não podem ser separados por CNAE. Precisa de outra fonte ou de aceitar 3 categorias em vez de 6.', cel)],
+    [Paragraph('<b>Mapa 3</b> — Ciclo biológico (compostagem, biodigestão, biogás, biomassa, açúcar e álcool)', cel),
+     Paragraph('Não feito', cel_naofeito),
+     Paragraph('Os dados existem e estão completos (239 usinas ANEEL com coordenada oficial + 31 usinas de compostagem via CNPJ). É o mais rápido dos três.', cel)],
+    [Paragraph('Cruzamento com IDH e densidade populacional por região', cel),
+     Paragraph('Não feito', cel_naofeito),
+     Paragraph('População do IBGE é acessível por API. O IDH municipal (Atlas Brasil) exige extração manual. É o item que daria a leitura de desigualdade que a especialista pediu (o caso de Registro).', cel)],
+    [Paragraph('Pesquisar alcance/raio de atendimento das empresas', cel),
+     Paragraph('Não feito', cel_naofeito),
+     Paragraph('Levantado na reunião como possibilidade exploratória, não como requisito. Não há fonte pública estruturada; exigiria pesquisa empresa a empresa.', cel)],
+]
+tbl_reuniao = Table(reuniao, colWidths=[5.4*cm, 2.4*cm, 8.5*cm])
+tbl_reuniao.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+]))
+story.append(tbl_reuniao)
+SP_(8)
+P('Em resumo: <b>1 dos 3 mapas temáticos está entregue</b>. Os Mapas 2 e 3 não dependem de nenhuma '
+  'fonte bloqueada — os dados já estão na base e o trabalho restante é de visualização. A sub-camada '
+  'de materiais é a única parte do pedido que a fonte atual não comporta integralmente.')
+
+SP_(8)
 P('Bloqueio externo — apagão eleitoral', h2)
 P('CETESB, SNIS e o cadastro de cooperativas de catadores (SINIR) estão indisponíveis até '
   '<b>25/10/2026</b>, por força do período de defeso eleitoral (Lei 9.504/1997, art. 73 VI "b", '
@@ -392,6 +551,13 @@ P('CETESB, SNIS e o cadastro de cooperativas de catadores (SINIR) estão indispo
   'qualquer tentativa de acessar essas 3 fontes até a data.')
 
 P('Próximos passos recomendados', h2)
+P('— <b>Construir os Mapas 2 e 3</b> da reformulação. Nenhum dos dois depende de fonte bloqueada: '
+  'os dados já estão na base e o trabalho é de visualização. O Mapa 3 (ciclo biológico) é o mais '
+  'rápido.', item)
+P('— <b>Alinhar a nomenclatura do índice de maturidade</b> com a especialista: 5 classes numéricas '
+  '(atual) ou os 3 níveis nomeados propostos na reunião (básico / estruturado / circular).', item)
+P('— <b>Cruzar com população e IDH municipal</b>, que é o que permite ler o vazio interno das '
+  'regiões como desigualdade e não só como ausência de empresa.', item)
 P('— Aguardar 25/10/2026 e então integrar CETESB (Inventário Estadual de Resíduos, requer '
   'extração de tabelas de PDF), SNIS (série histórica de saneamento) e o cadastro de cooperativas '
   'de catadores (SINIR/CATAsampa).', item)

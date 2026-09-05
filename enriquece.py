@@ -19,17 +19,36 @@ def normaliza(s):
     return s.upper().strip()
 
 
-# Correcoes manuais para nomes que nao normalizam identico entre as fontes:
-# hifen nao e removido pela normalizacao; "Luis"/"Luiz" e grafia alternativa oficial;
-# "Ipaucu"/"Ipaussu" e variante de grafia; acento suspenso (´) em vez de apostrofo
-# reto (') na fonte ANEEL faz o "d´Oeste" normalizar sem apostrofo nenhum.
+# Correcoes manuais para nomes que nao normalizam identico entre as fontes.
+# TUDO e canonizado para a grafia da MALHA DO IBGE, que e a fonte oficial e a
+# que desenha os poligonos do mapa. Por isso 'LUIZ ANTONIO' (grafia da tabela
+# municipio->RA) vira 'LUIS ANTONIO' (grafia do IBGE), e nao o contrario.
+#   - o hifen nao e removido pela normalizacao;
+#   - "Luis"/"Luiz" e "Ipaucu"/"Ipaussu" sao grafias alternativas entre fontes;
+#   - o acento agudo suspenso (´) que a ANEEL usa no lugar do apostrofo reto (')
+#     normaliza para ESPACO, nao para nada: "d´Oeste" -> "D OESTE";
+#   - uma linha da ANEEL traz "municipio, estado" no campo de municipio.
 ALIASES = {
     'BIRITIBA-MIRIM': 'BIRITIBA MIRIM',
-    'LUIS ANTONIO': 'LUIZ ANTONIO',
-    "SAO JOAO DO PAU D'ALHO": "SAO JOAO DO PAU-D'ALHO",
+    'LUIZ ANTONIO': 'LUIS ANTONIO',
+    "SAO JOAO DO PAU-D'ALHO": "SAO JOAO DO PAU D'ALHO",
     'IPAUCU': 'IPAUSSU',
-    'SANTA BARBARA DOESTE': "SANTA BARBARA D'OESTE",
+    'SANTA BARBARA D OESTE': "SANTA BARBARA D'OESTE",
+    'GUARULHOS, SAO PAULO': 'GUARULHOS',
 }
+
+
+def chave(municipio):
+    """Chave canonica de municipio para casar as tres fontes (empresas, energia,
+    malha do IBGE, tabela de RA).
+
+    Use SEMPRE esta funcao ao comparar nomes vindos de fontes diferentes. Normalizar
+    so um dos lados faz o join falhar em silencio: foi assim que 105 das 239 usinas
+    de energia (44%) ficaram fora do indice de maturidade — a agregacao usava
+    upper(), que preserva acento, e a consulta usava normaliza(), que remove.
+    """
+    k = normaliza(municipio)
+    return ALIASES.get(k, k)
 
 # Categoria circular ISO 59000 (item 4 do escopo). CNAEs de tratamento/disposicao
 # final e descontaminacao ficam fora das 6 categorias "circulares" propriamente
@@ -56,14 +75,14 @@ def carrega_ra():
     ra = {}
     with open('municipios_regiao_administrativa.csv', encoding='utf-8') as f:
         for row in csv.DictReader(f):
-            ra[row['municipio_norm']] = row['regiao_administrativa']
+            # passa pela mesma chave canonica: a tabela de RA grafa 2 municipios
+            # diferente da malha do IBGE (Luiz/Luis Antonio, Pau-d'Alho/Pau d'Alho)
+            ra[chave(row['municipio_norm'])] = row['regiao_administrativa']
     return ra
 
 
 def busca_ra(municipio, ra_map):
-    chave = normaliza(municipio)
-    chave = ALIASES.get(chave, chave)
-    return ra_map.get(chave, '')
+    return ra_map.get(chave(municipio), '')
 
 
 def enriquece_residuos(ra_map):
