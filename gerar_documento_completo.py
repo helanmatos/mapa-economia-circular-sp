@@ -8,7 +8,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
                                 TableStyle, HRFlowable, PageBreak)
 
-from maturidade import apura, NIVEL_INFO, CLASSE_INFO
+from maturidade import apura, NIVEL_INFO, CLASSE_INFO, ESTAGIO_INFO, ESTAGIOS
+from dados_app import CAMADAS, MATERIAIS, CICLOS, carrega as carrega_app
 
 SAIDA = 'documento_completo_mapa_economia_circular.pdf'
 DATA_DOC = '05/09/2026'
@@ -88,6 +89,35 @@ for _nome, _c in classes_ra.items():
 ras_por_hachura = {}
 for _nome, _c in classes_ra.items():
     ras_por_hachura.setdefault(_c['listras'], []).append(_nome)
+dist_estagio = mat['dist_estagio']
+APP = carrega_app(con)
+conta_camada, conta_material = APP['conta_camada'], APP['conta_material']
+conta_ciclo, mw_ciclo = APP['conta_ciclo'], APP['mw_ciclo']
+
+# cruzamento maturidade x contexto socioeconômico
+import csv as _csv, math as _math, statistics as _st
+_ctx = {r['cod_ibge']: r for r in _csv.DictReader(open('contexto_municipios.csv', encoding='utf-8'))}
+_l = []
+for _f in mat['geojson_mun']['features']:
+    _c = _ctx.get(_f['properties']['codarea'])
+    if _c and _c['idhm'] and _c['populacao']:
+        _l.append((float(_c['idhm']), int(_c['populacao']), _f['properties']['nivel']))
+
+
+def _pearson(xs, ys):
+    mx, my = _st.mean(xs), _st.mean(ys)
+    num = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    den = (sum((x - mx) ** 2 for x in xs) * sum((y - my) ** 2 for y in ys)) ** 0.5
+    return num / den if den else 0.0
+
+
+R_IDHM = _pearson([x[0] for x in _l], [x[2] for x in _l])
+R_POP = _pearson([_math.log10(max(x[1], 1)) for x in _l], [x[2] for x in _l])
+POP_N0 = int(_st.median([x[1] for x in _l if x[2] == 0]))
+POP_N4 = int(_st.median([x[1] for x in _l if x[2] == 4]))
+IDHM_N0 = _st.mean([x[0] for x in _l if x[2] == 0])
+IDHM_N4 = _st.mean([x[0] for x in _l if x[2] == 4])
+
 mun_sem_registro = dist_mun[0]
 pct_sem_registro = f'{100*mun_sem_registro/n_mun_total:.1f}%'
 
@@ -281,8 +311,10 @@ P('<b>Limitação estrutural mais importante</b>: das 6 categorias circulares do
 # ============ 5. CONTEUDO DOS MAPAS ============
 story.append(PageBreak())
 P('5. Conteúdo dos mapas publicados', h1)
-P('Três visualizações interativas foram construídas sobre a mesma base de dados, com os mesmos '
-  'filtros:')
+P('As visualizações foram unificadas em <b>uma única aplicação com quatro temas</b>, navegáveis '
+  'por abas. Os dados são carregados uma vez só e o que muda entre os temas é filtro, cor e '
+  'visibilidade de camada — por isso a troca é instantânea e o enquadramento do mapa é '
+  'preservado. Os temas:')
 
 P('5.1 Hub Circular por Região Administrativa', h2)
 P('É o mapa mais estratégico dos três, e nasceu da reformulação proposta na reunião de produto de '
@@ -314,7 +346,39 @@ P('Uma <b>hachura diagonal</b> sobre o polígono codifica a fatia de municípios
   'salvaguarda para o caso de uma região com média alta concentrada em poucos municípios, situação '
   'que hoje não ocorre.')
 
-P('5.2 Mapa de pontos e mapa de calor', h2)
+P('5.2 Tratamento de resíduos — cinco camadas combináveis', h2)
+P('Atende ao pedido de sair da visão ponto-a-ponto e olhar a cadeia por função. As cinco '
+  'camadas podem ser ligadas e desligadas independentemente e vistas em conjunto — dá para '
+  f'cruzar coleta ({fmt(conta_camada["coleta"])} estabelecimentos) com triagem '
+  f'({fmt(conta_camada["triagem"])}), ou isolar descontaminação ({fmt(conta_camada["descontaminacao"])}), '
+  f'tratamento e disposição ({fmt(conta_camada["tratamento"])}) e orgânicos ({fmt(conta_camada["organicos"])}).')
+P('Dentro de "triagem e recuperação" há a sub-camada de <b>material recuperado</b>. Aqui o '
+  'documento precisa ser honesto sobre um limite da fonte: a reunião pediu metal, plástico, '
+  'papel, vidro, orgânico e construção civil, mas <b>só metal e plástico têm CNAE próprio</b> '
+  f'na Receita Federal — metal ({fmt(conta_material["metal"])} estabelecimentos, CNAEs 3831-9/01 '
+  f'e 3831-9/99) e plástico ({fmt(conta_material["plastico"])}, CNAE 3832-7/00). Papel, vidro e '
+  f'construção civil caem todos no código genérico 3839-4/99 ({fmt(conta_material["outros"])} '
+  'estabelecimentos) e são indistinguíveis entre si por esta fonte. Em vez de simular uma '
+  'separação que o dado não sustenta, o terceiro balde é rotulado pelo que ele realmente é.')
+
+P('5.3 Ciclo biológico', h2)
+P(f'Reúne as {fmt(conta_ciclo["compostagem"] + conta_ciclo["biogas"] + conta_ciclo["biomassa"])} '
+  f'unidades do ciclo orgânico: compostagem ({fmt(conta_ciclo["compostagem"])} usinas, via CNPJ), '
+  f'biogás ({fmt(conta_ciclo["biogas"])} usinas, {num(mw_ciclo["biogas"])} MW) e biomassa '
+  f'energética ({fmt(conta_ciclo["biomassa"])} usinas, {num(mw_ciclo["biomassa"])} MW). O raio de '
+  'cada círculo é proporcional à potência outorgada, porque uma usina de 300 MW e uma de 0,5 MW '
+  'não podem ter o mesmo peso visual. O padrão que salta é a concentração da biomassa no '
+  'cinturão canavieiro — o oposto geográfico da concentração de resíduos sólidos.')
+
+P('5.4 Contexto socioeconômico', h2)
+P('Cruza o índice de maturidade com <b>população</b> (estimativa IBGE) e <b>IDHM</b> (base do '
+  'Atlas do Desenvolvimento Humano, via Ipeadata), por município. O IDHM municipal disponível é '
+  'o de <b>2010</b> — não por escolha de fonte, mas porque é o mais recente que existe: depois do '
+  'Censo 2010 o índice passou a ser calculado com a PNAD Contínua, que só tem representatividade '
+  'estadual, e a versão com o Censo 2022 ainda não foi publicada. O app declara essa defasagem '
+  'na própria legenda. O cruzamento das duas camadas é o achado da seção 6.6.')
+
+P('5.5 Mapa de pontos e mapa de calor', h2)
 P('<b>Mapa de pontos</b> — cada iniciativa é um ponto individual no mapa, colorido por categoria. '
   'Ao clicar em um ponto, um popup mostra nome, CNAE ou tipo de combustível, endereço/município e, '
   'se aplicável, um aviso de localização aproximada. Painel lateral com contadores em tempo real, '
@@ -450,6 +514,48 @@ P('Isso muda o tipo de política que faz sentido. Se o vazio fosse entre regiõe
   'por consórcios intermunicipais, logística de transbordo e escala compartilhada do que por novas '
   'instalações em cada município — algo que a leitura por região, sozinha, esconderia.')
 
+P('6.6 O que prevê a infraestrutura circular não é a renda, é a escala', h2)
+P('A reunião levantou a hipótese de que o vazio circular acompanharia o IDH baixo — a região de '
+  'Registro foi citada como exemplo. Com os dados agora cruzados, a hipótese se confirma em '
+  'direção, mas não em força, e o que aparece no lugar é mais acionável.')
+dados_cruz = [
+    [Paragraph('Nível do município', cel_b), Paragraph('Municípios', cel_b),
+     Paragraph('IDHM médio', cel_b), Paragraph('População mediana', cel_b)],
+]
+for k in range(4, -1, -1):
+    _sub = [x for x in _l if x[2] == k]
+    dados_cruz.append([
+        Paragraph(f'{k} — {NIVEL_INFO[k][0].split(" (")[0]}', cel),
+        Paragraph(fmt(len(_sub)), cel),
+        Paragraph(num(_st.mean([x[0] for x in _sub]), 3), cel),
+        Paragraph(fmt(int(_st.median([x[1] for x in _sub]))), cel)])
+tbl_cruz = Table(dados_cruz, colWidths=[5.4*cm, 2.6*cm, 3*cm, 5*cm])
+tbl_cruz.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('BACKGROUND', (0, 1), (-1, 1), VERDE_CLARO),
+    ('BACKGROUND', (0, -1), (-1, -1), VERMELHO_CLARO),
+    ('ROWBACKGROUNDS', (0, 2), (-1, -2), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+    ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+]))
+story.append(tbl_cruz)
+SP_(6)
+P(f'A correlação entre maturidade e <b>tamanho da população</b> é de <b>{num(R_POP, 2)}</b>; '
+  f'entre maturidade e <b>IDHM</b>, de <b>{num(R_IDHM, 2)}</b>. A população mediana salta de '
+  f'<b>{fmt(POP_N0)}</b> habitantes nos municípios sem nenhum serviço para <b>{fmt(POP_N4)}</b> '
+  f'nos que têm os quatro — um fator de {round(POP_N4/POP_N0)} vezes. No mesmo intervalo o IDHM '
+  f'médio mal se move: {num(IDHM_N0, 3)} contra {num(IDHM_N4, 3)}.')
+P('A leitura prática muda com isso. Se o determinante fosse a renda, a resposta seria política '
+  'de desenvolvimento regional. Como o determinante é a <b>escala</b>, a resposta é arranjo '
+  'intermunicipal: um município de 4 mil habitantes não sustenta um aterro licenciado nem uma '
+  'usina de triagem, por mais rico que seja. Combinado com o achado da seção 6.5 — o vazio está '
+  'dentro das regiões, não entre elas — isso aponta para consórcios, transbordo e escala '
+  'compartilhada como o instrumento central, não para instalação nova em cada município.')
+P('Vale registrar a ressalva metodológica: o IDHM é de 2010 e a população é estimativa atual. '
+  'A defasagem não invalida a comparação (a hierarquia de IDH entre municípios é bastante '
+  'estável no tempo), mas precisa estar declarada.')
+
 # ============ 7. CONCLUSOES ============
 story.append(PageBreak())
 P('7. Conclusões possíveis com os dados atuais', h1)
@@ -510,20 +616,20 @@ reuniao = [
      Paragraph('Feito', cel_feito),
      Paragraph('Publicado, com drill-down até a empresa. Duas ressalvas de nomenclatura: a reunião falava em 3 níveis nomeados (básico / estruturado / circular) e o mapa usa 5 classes (0 a 4); e o índice conta quantos dos 4 serviços existem, sem exigir uma composição específica. Vale alinhar com a especialista.', cel)],
     [Paragraph('<b>Mapa 2</b> — Tratamento de resíduos com 5 camadas (coleta, triagem, orgânicos, tratamento, descontaminação)', cel),
-     Paragraph('Não feito', cel_naofeito),
-     Paragraph('Todos os dados necessários já estão na base (o CNAE de cada estabelecimento mapeia direto nas 5 camadas). É trabalho de visualização, não de coleta.', cel)],
+     Paragraph('Feito', cel_feito),
+     Paragraph('Tema próprio no app, com as 5 camadas e alternância entre pontos e densidade', cel)],
     [Paragraph('Camadas do Mapa 2 combináveis entre si', cel),
-     Paragraph('Não feito', cel_naofeito),
-     Paragraph('Depende do Mapa 2. Tecnicamente simples: os mapas atuais já combinam filtros por categoria.', cel)],
+     Paragraph('Feito', cel_feito),
+     Paragraph('Cada camada liga e desliga independentemente; o contador do painel acompanha a seleção em tempo real', cel)],
     [Paragraph('Sub-camada de materiais (metal, plástico, papel, vidro, orgânico, construção civil)', cel),
-     Paragraph('Inviável como pedido', cel_naofeito),
-     Paragraph('Só metal (3831-9/01 e 3831-9/99) e plástico (3832-7/00) têm CNAE próprio. Papel, vidro e construção civil caem todos no genérico 3839-4/99 e não podem ser separados por CNAE. Precisa de outra fonte ou de aceitar 3 categorias em vez de 6.', cel)],
+     Paragraph('Parcial', cel_parcial),
+     Paragraph('Feito para metal e plástico, que têm CNAE próprio. Papel, vidro e construção civil caem todos no genérico 3839-4/99 e ficam num terceiro balde rotulado como tal — a fonte não permite separá-los. Precisaria de outra fonte para as 6 categorias pedidas.', cel)],
     [Paragraph('<b>Mapa 3</b> — Ciclo biológico (compostagem, biodigestão, biogás, biomassa, açúcar e álcool)', cel),
-     Paragraph('Não feito', cel_naofeito),
-     Paragraph('Os dados existem e estão completos (239 usinas ANEEL com coordenada oficial + 31 usinas de compostagem via CNPJ). É o mais rápido dos três.', cel)],
+     Paragraph('Feito', cel_feito),
+     Paragraph('Tema próprio, com o raio do círculo proporcional à potência outorgada', cel)],
     [Paragraph('Cruzamento com IDH e densidade populacional por região', cel),
-     Paragraph('Não feito', cel_naofeito),
-     Paragraph('População do IBGE é acessível por API. O IDH municipal (Atlas Brasil) exige extração manual. É o item que daria a leitura de desigualdade que a especialista pediu (o caso de Registro).', cel)],
+     Paragraph('Feito', cel_feito),
+     Paragraph('Tema "Contexto", com população (IBGE) e IDHM (Ipeadata/Atlas) nos 645 municípios. Ver a análise na seção 6.6', cel)],
     [Paragraph('Pesquisar alcance/raio de atendimento das empresas', cel),
      Paragraph('Não feito', cel_naofeito),
      Paragraph('Levantado na reunião como possibilidade exploratória, não como requisito. Não há fonte pública estruturada; exigiria pesquisa empresa a empresa.', cel)],
@@ -538,9 +644,11 @@ tbl_reuniao.setStyle(TableStyle([
 ]))
 story.append(tbl_reuniao)
 SP_(8)
-P('Em resumo: <b>1 dos 3 mapas temáticos está entregue</b>. Os Mapas 2 e 3 não dependem de nenhuma '
-  'fonte bloqueada — os dados já estão na base e o trabalho restante é de visualização. A sub-camada '
-  'de materiais é a única parte do pedido que a fonte atual não comporta integralmente.')
+P('Em resumo: <b>os 3 mapas temáticos estão entregues</b>, mais o cruzamento socioeconômico. '
+  'Restam dois pontos, ambos de alinhamento e não de execução: a <b>sub-camada de materiais</b>, '
+  'que a fonte só comporta para metal e plástico; e a <b>nomenclatura do índice</b> — a reunião '
+  'falou em 3 níveis nomeados e o app oferece as duas leituras (a escada nomeada e a escala 0-4), '
+  'deixando a escolha para a especialista.')
 
 SP_(8)
 P('Bloqueio externo — apagão eleitoral', h2)

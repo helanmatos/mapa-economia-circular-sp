@@ -55,6 +55,44 @@ T_RES = "read_csv('empresas_sp_circular_enriquecido.csv', header=true, all_varch
 T_EN = "read_csv('energia_biomassa_biogas_enriquecido.csv', header=true, all_varchar=true)"
 
 
+# Escada COMPOSICIONAL pedida na reunião de 07/09/2026. A especialista descreveu os
+# estágios pelo que a região TEM, não por quantos itens tem: "é básico, ela só tem
+# coleta e reciclagem, ou é um nível mais estruturado, coleta reciclagem e tratamento,
+# ou é um nível circular mesmo, onde a gente tem todos os elementos".
+#
+# Isso é diferente da contagem 0-4: um município com coleta + orgânicos tem 2 serviços
+# mas NÃO é "básico" no sentido dela, porque não fecha coleta+reciclagem. As duas
+# leituras convivem no mapa — a contagem dá a granularidade, o estágio dá o nome.
+ESTAGIOS = ['sem', 'incipiente', 'basico', 'estruturado', 'circular']
+ESTAGIO_INFO = {
+    'circular':    ('Circular', 'coleta, reciclagem, tratamento e orgânicos', PALETA[4]),
+    'estruturado': ('Estruturado', 'coleta, reciclagem e tratamento', PALETA[3]),
+    'basico':      ('Básico', 'coleta e reciclagem', PALETA[2]),
+    'incipiente':  ('Incipiente', 'tem algum serviço, mas não fecha coleta + reciclagem', PALETA[1]),
+    'sem':         ('Sem infraestrutura', 'nenhum dos 4 serviços', PALETA[0]),
+}
+
+
+def estagio(coleta, reciclagem, tratamento, organicos):
+    """Estágio composicional, na escada nomeada da reunião.
+
+    A ordem importa: circular exige os 4; estruturado exige a base + tratamento;
+    básico exige exatamente a base. Qualquer outra combinação com pelo menos um
+    serviço é 'incipiente' — é o balde honesto para quem tem orgânicos sem ter
+    reciclagem, por exemplo, caso que a escada original não previa.
+    """
+    base = coleta > 0 and reciclagem > 0
+    if base and tratamento > 0 and organicos > 0:
+        return 'circular'
+    if base and tratamento > 0:
+        return 'estruturado'
+    if base:
+        return 'basico'
+    if coleta > 0 or reciclagem > 0 or tratamento > 0 or organicos > 0:
+        return 'incipiente'
+    return 'sem'
+
+
 def calcula_nivel(coleta, reciclagem, tratamento, organicos):
     return sum([coleta > 0, reciclagem > 0, tratamento > 0, organicos > 0])
 
@@ -152,6 +190,7 @@ def apura(con=None):
             'organicos': organicos, 'total_iniciativas': d['total_residuos'] + n_energia,
             'faltando': elementos_faltando(d['coleta'], d['reciclagem'], d['tratamento'], organicos),
             'municipio_norm': k,
+            'estagio': estagio(d['coleta'], d['reciclagem'], d['tratamento'], organicos),
             **pinta([nivel]),  # município = caso N=1 da mesma regra de cor da RA
         })
         niveis_por_ra.setdefault(feat['properties']['regiao_administrativa'], []).append(nivel)
@@ -164,7 +203,16 @@ def apura(con=None):
     dist = [sum(1 for f in geojson_mun['features'] if f['properties']['nivel'] == k) for k in range(5)]
     total_mun = len(geojson_mun['features'])
 
+    dist_estagio = {e: sum(1 for f in geojson_mun['features'] if f['properties']['estagio'] == e)
+                    for e in ESTAGIOS}
+    estagios_por_ra = {}
+    for f in geojson_mun['features']:
+        ra_nome = f['properties']['regiao_administrativa']
+        estagios_por_ra.setdefault(ra_nome, []).append(f['properties']['estagio'])
+
     return {
+        'dist_estagio': dist_estagio,
+        'estagios_por_ra': estagios_por_ra,
         'geojson_mun': geojson_mun,
         'niveis_por_ra': niveis_por_ra,
         'classes_ra': classes_ra,
