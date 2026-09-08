@@ -165,6 +165,35 @@ def carrega(con=None):
             },
         })
 
+    # ---------- empresas que NÃO entraram no mapa (sem coordenada) ----------
+    # Elas existem na base e a região "vazia" pode ser artefato disso. Em vez de só
+    # avisar que somem, o app lista quais são — 83% não têm nome fantasia, então o
+    # CNPJ e o endereço é que tornam a lista utilizável (dá para conferir na Receita
+    # ou corrigir a mão).
+    cols_nc = ['cnpj', 'nome_fantasia', 'cnae_principal', 'tipo_logradouro', 'logradouro',
+               'numero', 'bairro', 'municipio', 'regiao_administrativa', 'geocode_status']
+    sem_coord = []
+    for r in con.sql(f"SELECT {', '.join(cols_nc)} FROM {T_RES} WHERE latitude IS NULL "
+                     f"ORDER BY regiao_administrativa, municipio, cnpj").fetchall():
+        d = dict(zip(cols_nc, r))
+        cnpj = (d['cnpj'] or '').zfill(14)
+        endereco = ' '.join(x for x in [d['tipo_logradouro'], d['logradouro']] if x)
+        if d['numero']:
+            endereco += f", {d['numero']}"
+        if d['bairro']:
+            endereco += f" - {d['bairro']}"
+        sem_coord.append({
+            'cnpj': f'{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}',
+            'nome': d['nome_fantasia'] or '',
+            'atividade': CNAE_DESC.get(d['cnae_principal'], d['cnae_principal'] or ''),
+            'endereco': endereco or '(endereço não informado)',
+            'municipio': d['municipio'] or '',
+            'ra': d['regiao_administrativa'] or '',
+            'municipio_norm': chave(d['municipio']),
+            # 'falhou' = o OSM não achou o endereço; 'fora' = geocodificou fora de SP
+            'motivo': 'fora' if d['geocode_status'] == 'fora_dos_limites_sp' else 'falhou',
+        })
+
     # ---------- contagens que o painel exibe ----------
     conta_camada = {k: 0 for k in CAMADAS}
     conta_material = {k: 0 for k in MATERIAIS}
@@ -190,6 +219,7 @@ def carrega(con=None):
         'conta_material': conta_material,
         'conta_ciclo': conta_ciclo,
         'conta_circular': conta_circular,
+        'sem_coordenada': sem_coord,
         'mw_ciclo': {k: round(v, 1) for k, v in mw_ciclo.items()},
     }
 
@@ -201,4 +231,6 @@ if __name__ == '__main__':
     print('materiais :', d['conta_material'])
     print('ciclos    :', d['conta_ciclo'])
     print('circular  :', d['conta_circular'])
+    print('sem coord :', len(d['sem_coordenada']), '| com nome:',
+          sum(1 for x in d['sem_coordenada'] if x['nome']))
     print('MW        :', d['mw_ciclo'])
