@@ -15,13 +15,13 @@ Mapeamento georreferenciado de iniciativas de economia circular no estado de Sã
 
 Reformulação proposta em reunião de produto (07/09/2026): em vez de olhar empresa por empresa, o Hub Circular mede quantos dos 4 elementos de infraestrutura existem em cada lugar — Coleta, Reciclagem, Tratamento/Disposição e Orgânicos (compostagem + energia).
 
-O **nível do município** é a contagem direta desses 4 elementos. Dos 645 municípios: 125 no nível 0, 171 no nível 1, 196 no nível 2, 130 no nível 3 e apenas 23 no nível 4 — média estadual de 1,62 serviço por município.
+O **nível do município** é a contagem direta desses 4 elementos. Dos 645 municípios: 99 no nível 0, 162 no nível 1, 203 no nível 2, 145 no nível 3 e 36 no nível 4 — média estadual de 1,78 serviço por município.
 
 A **classe da Região Administrativa** é a média dos municípios dela, arredondada, sujeita a uma **trava de lacuna**: quanto maior a fatia de municípios sem nenhum registro, mais baixo o teto da classe (a partir de 15% o teto é 2, de 30% é 1, de 50% é 0). A trava só rebaixa, nunca promove. Vale registrar que, **com os dados atuais, a trava não chega a ser acionada em nenhuma das 16 RAs** — ela é uma salvaguarda contra uma região com média alta concentrada em poucos municípios, situação que hoje não ocorre. O que efetivamente corrige a leitura é a troca da presença regional pela média municipal.
 
-Uma **hachura diagonal** sobre o polígono mostra a fatia de municípios sem registro — um segundo canal, independente da cor, e o único que sobrevive à impressão em preto-e-branco. Oito RAs saem lisas, cinco com hachura leve e três com hachura forte.
+Uma **hachura diagonal** sobre o polígono mostra a fatia de municípios sem registro — um segundo canal, independente da cor, e o único que sobrevive à impressão em preto-e-branco. Nove RAs saem lisas, cinco com hachura leve e duas com hachura forte.
 
-Isso substituiu a regra anterior, que pintava a RA pela presença do serviço *em algum lugar da região*: bastava um município ter tratamento para a região inteira virar "circular completo", e 12 das 16 RAs apareciam no nível máximo. O caso mais claro era a 8ª São José do Rio Preto, pintada de verde-escuro com 38,5% dos seus municípios sem nenhum registro, acima da 2ª Santos, que não tem nenhum município zerado.
+Isso substituiu a regra anterior, que pintava a RA pela presença do serviço *em algum lugar da região*: bastava um município ter tratamento para a região inteira virar "circular completo", e 12 das 16 RAs apareciam no nível máximo. O caso mais claro era a 8ª São José do Rio Preto, pintada de verde-escuro com 31,2% dos seus municípios sem nenhum registro, acima da 2ª Santos, que não tem nenhum município zerado.
 
 ### Duas escalas, cada uma no nível em que funciona
 
@@ -32,15 +32,15 @@ O índice tem duas leituras, e a escala **acompanha o nível de navegação** �
 | **Estado** (16 regiões) | Média municipal, 0-4 | É a única que não deixa uma região verde tendo um terço dos municípios vazio |
 | **Município** | Escada nomeada (básico / estruturado / circular) | Sem agregação, presença *é* a realidade local — e o nome comunica melhor que "2 de 4" |
 
-A **escada composicional** é a leitura proposta na reunião: não conta quantos serviços existem, verifica *quais*. Básico = coleta + reciclagem; estruturado = + tratamento; circular = + orgânicos. Aplicada aos 645 municípios: 23 circulares (3,6%), 46 estruturados (7,1%), 242 básicos (37,5%), **209 incipientes (32,4%)** e 125 sem nada (19,4%). Os "incipientes" têm algum serviço mas não fecham nem coleta + reciclagem — um terço do estado, que a contagem simples misturava com quem tem a base montada.
+A **escada composicional** é a leitura proposta na reunião: não conta quantos serviços existem, verifica *quais*. Básico = coleta + reciclagem; estruturado = + tratamento; circular = + orgânicos. Aplicada aos 645 municípios: 36 circulares (5,6%), 51 estruturados (7,9%), 262 básicos (40,6%), **197 incipientes (30,5%)** e 99 sem nada (15,3%). Os "incipientes" têm algum serviço mas não fecham nem coleta + reciclagem — um terço do estado, que a contagem simples misturava com quem tem a base montada.
 
-**Por que a escada não serve para a região.** Agregada por RA, ela volta a medir "presença em algum ponto do território" — exatamente o defeito que a média veio corrigir. Pela escada, 12 das 16 regiões são "circulares", incluindo a 9ª Araçatuba, que tem **um único** estabelecimento de tratamento e 34,9% dos municípios sem nenhum registro. No sentido oposto, a 2ª Santos, com 0% de municípios vazios, cai para "estruturado". Abrir Araçatuba no mapa mostra o problema de imediato: a região verde se desfaz em vermelhos, laranjas e um só município verde.
+**Por que a escada não serve para a região.** Agregada por RA, ela volta a medir "presença em algum ponto do território" — exatamente o defeito que a média veio corrigir. Pela escada, 12 das 16 regiões são "circulares", incluindo a 9ª Araçatuba, que tem **um único** estabelecimento de tratamento e 32,6% dos municípios sem nenhum registro. No sentido oposto, a 2ª Santos, com 0% de municípios vazios, cai para "estruturado". Abrir Araçatuba no mapa mostra o problema de imediato: a região verde se desfaz em vermelhos, laranjas e um só município verde.
 
-**Por que a escada é melhor no município.** Ela prioriza o tratamento/disposição, que é o elo escasso do estado — 108 estabelecimentos, contra 3.227 de coleta e 5.326 de triagem. As duas escalas discordam em 120 dos 645 municípios: 82 que a contagem chama de "quase completo" a escada mantém em "básico" por falta de tratamento (Andradina tem coleta 4, reciclagem 4, orgânicos 1 e **zero** tratamento), e 36 que a contagem chama de "intermediário" a escada rebaixa a "incipiente" por falta de coleta.
+**Por que a escada é melhor no município.** Ela prioriza o tratamento/disposição, que é o elo escasso do estado — 108 estabelecimentos, contra 3.227 de coleta e 5.326 de triagem. As duas escalas discordam em 128 dos 645 municípios — a contagem chama de "quase completo" municípios que a escada mantém em "básico" por falta de tratamento, e chama de "intermediário" outros que a escada rebaixa a "incipiente" por falta de coleta.
 
 O botão de escala continua no painel para comparar as duas; ao mudar de nível ele volta ao padrão. Forçar a escada no estado exibe um aviso explicando o que aquela leitura esconde.
 
-Com a regra atual nenhuma RA alcança a classe 4. A 1ª Grande SP é a única classe 3; nove regiões ficam na classe 2 e seis na classe 1 (Registro, Presidente Prudente, Marília, São José do Rio Preto, Araçatuba e Itapeva). Coleta e reciclagem continuam praticamente universais; o que diferencia as regiões é a presença de tratamento/disposição formal e, sobretudo, o tamanho do vazio interno.
+Com a regra atual nenhuma RA alcança a classe 4. A 1ª Grande SP é a única classe 3; dez regiões ficam na classe 2 e cinco na classe 1 (Registro, Presidente Prudente, São José do Rio Preto, Araçatuba e Itapeva). Coleta e reciclagem continuam praticamente universais; o que diferencia as regiões é a presença de tratamento/disposição formal e, sobretudo, o tamanho do vazio interno.
 
 ## Os quatro temas
 
@@ -50,7 +50,7 @@ Com a regra atual nenhuma RA alcança a classe 4. A 1ª Grande SP é a única cl
 
 **3. Ciclo biológico** — compostagem, biogás e biomassa energética, com o **raio do círculo proporcional à potência outorgada**. São 270 unidades somando 6.951,3 MW, quase tudo bagaço de cana no cinturão canavieiro. O contraste com o tema 1 é o achado: resíduos sólidos se concentram na Grande SP, energia se concentra no interior agrícola.
 
-**4. Contexto socioeconômico** — população (IBGE) e IDHM (Ipeadata / Atlas do Desenvolvimento Humano) nos 645 municípios, cruzados com o índice de maturidade. É o cruzamento pedido na reunião, e ele **qualifica a hipótese original**: a intuição era que o vazio circular acompanharia o IDH baixo. Acompanha, mas fracamente — a correlação com o IDHM é 0,47, enquanto a correlação com o **tamanho da população** é 0,70. A população mediana salta de 4.125 habitantes nos municípios sem nenhum serviço para 164.687 nos que têm os quatro (fator de 40×), enquanto o IDHM médio mal se move (0,723 contra 0,774).
+**4. Contexto socioeconômico** — população (IBGE) e IDHM (Ipeadata / Atlas do Desenvolvimento Humano) nos 645 municípios, cruzados com o índice de maturidade. É o cruzamento pedido na reunião, e ele **qualifica a hipótese original**: a intuição era que o vazio circular acompanharia o IDH baixo. Acompanha, mas fracamente — a correlação com o IDHM é 0,46, enquanto a correlação com o **tamanho da população** é 0,68. A população mediana salta de 4.101 habitantes nos municípios sem nenhum serviço para 100.272 nos que têm os quatro (fator de 24×), enquanto o IDHM médio mal se move (0,722 contra 0,769).
 
 O que isso muda: se o determinante fosse renda, a resposta seria política de desenvolvimento regional. Como é **escala**, a resposta é arranjo intermunicipal — um município de 4 mil habitantes não sustenta aterro licenciado nem usina de triagem por mais rico que seja. Somado ao achado de que o vazio está *dentro* das regiões e não entre elas, isso aponta para consórcio, transbordo e escala compartilhada.
 
@@ -74,11 +74,11 @@ Os temas 2 e 3 têm ainda filtro por Região Administrativa e alternância entre
 - [`analise_estrategica_mapa_economia_circular.pdf`](analise_estrategica_mapa_economia_circular.pdf) — análise estratégica: concentração regional, "desertos circulares", lacunas na cadeia circular e KPIs.
 - [`relatorio_mapa_economia_circular.pdf`](relatorio_mapa_economia_circular.pdf) — relatório da primeira entrega (base de empresas).
 
-## Viés de geocodificação — leia antes de citar os "desertos circulares"
+## Geocodificação: o que ela afeta e o que não afeta
 
-**1.790 das 10.509 empresas (17%) não têm coordenada** e ficam fora de todos os agregados. O OpenStreetMap mapeia mal ruas de cidades pequenas, sobretudo as nomeadas por pessoas.
+**1.790 das 10.509 empresas (17%) não têm coordenada.** O OpenStreetMap mapeia mal ruas de cidades pequenas, sobretudo as nomeadas por pessoas. Mas essas empresas **contam no índice de maturidade**: o município está preenchido em 100% dos registros, e o índice é por município — a coordenada só é necessária para desenhar o ponto no mapa.
 
-O problema não é o volume, é que **a falha não é uniforme**:
+Isso nem sempre foi assim. Até a v6 o índice filtrava por coordenada, o que descartava 1.790 empresas de município conhecido e produzia um viés na direção da própria conclusão, porque a falha de geocodificação é maior no interior:
 
 | Região | Empresas sem coordenada |
 |---|---|
@@ -89,11 +89,11 @@ O problema não é o volume, é que **a falha não é uniforme**:
 | 1ª Grande SP | **13,1%** |
 | 2Aª Registro | **4,3%** |
 
-As regiões que o mapa aponta como mais vazias são, em boa parte, as que mais perdem dados. **O viés corre na direção da própria conclusão** — o interior parece mais vazio também porque é pior mapeado. A diferença real entre capital e interior é menor do que o mapa sugere, ainda que a diferença exista (a Grande SP tem quase 40× mais iniciativas por município que Itapeva, magnitude que 14 pontos de viés não explicam).
+Corrigido o cálculo, os números mudaram de forma relevante: municípios sem nenhuma infraestrutura caíram de **125 para 99**, a média estadual subiu de 1,62 para **1,78**, os municípios com a cadeia completa passaram de 23 para **36**, e a 11ª Marília subiu de classe 1 para 2. Os "desertos" encolheram — Itapeva de 37,5% para 28,1% de municípios vazios, Bauru de 23,1% para 15,4%.
 
-Consequência direta: **26 dos 125 municípios classificados como "sem infraestrutura" têm empresas na base**, apenas sem coordenada. O mapa agora os marca com **pontilhado** e o popup diz explicitamente que ali o vazio é de mapeamento, não necessariamente de infraestrutura. "Sem registro geocodificado" e "sem nada" deixaram de ser a mesma cor.
+**O que ainda depende de coordenada é só a visualização de pontos.** Em 33 municípios existem empresas mas nenhuma aparece como ponto no mapa; eles são marcados com **pontilhado**, e o popup avisa que o índice ali está correto mas o mapa não mostrará pinos.
 
-E a ressalva deixou de ser só um aviso: ao entrar numa região ou município, o painel traz o link **"N empresas sem geolocalização definida"**, que abre a lista das empresas que ficaram de fora — CNPJ, atividade e endereço, dez por vez. Como 83% delas não têm nome fantasia, é o CNPJ e o endereço que tornam a lista utilizável: dá para conferir na Receita ou corrigir a coordenada à mão. O usuário passa a saber **quais** faltam, não só quantas.
+E a lista deixou de ser um aviso abstrato: ao entrar numa região ou município, o painel traz o link **"N empresas sem geolocalização definida"**, que abre a relação das empresas que não viraram ponto — CNPJ, atividade e endereço, dez por vez. Como 83% delas não têm nome fantasia, é o CNPJ e o endereço que tornam a lista utilizável: dá para conferir na Receita ou corrigir a coordenada à mão.
 
 ## Limitações conhecidas
 

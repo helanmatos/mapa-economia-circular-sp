@@ -158,6 +158,11 @@ def apura(con=None):
     """
     con = con or duckdb.connect()
 
+    # O índice é POR MUNICÍPIO, e o município está preenchido em 100% dos registros —
+    # inclusive nos 1.790 sem coordenada. Filtrar por latitude aqui descartava empresas
+    # cujo município é perfeitamente conhecido, criando 26 municípios "sem infraestrutura"
+    # que na verdade tinham empresas, e inflando os desertos justamente no interior, onde
+    # a geocodificação falha mais. A coordenada só é necessária para desenhar o pin.
     linhas = con.sql(f"""
         SELECT municipio,
           sum(CASE WHEN cnae_principal IN {ELEMENTOS['coleta']} THEN 1 ELSE 0 END) coleta,
@@ -165,15 +170,14 @@ def apura(con=None):
           sum(CASE WHEN cnae_principal IN {ELEMENTOS['tratamento_disposicao']} THEN 1 ELSE 0 END) tratamento,
           sum(CASE WHEN cnae_principal IN {ELEMENTOS['organicos_cnpj']} THEN 1 ELSE 0 END) organicos_compost,
           count(*) total_residuos
-        FROM {T_RES} WHERE latitude != '' GROUP BY 1
+        FROM {T_RES} GROUP BY 1
     """).fetchall()
     campos = ['coleta', 'reciclagem', 'tratamento', 'organicos_compost', 'total_residuos']
     dados_mun = {chave(r[0]): dict(zip(campos, r[1:])) for r in linhas}
 
-    # empresas que existem na base mas NÃO entraram no índice por falta de coordenada.
-    # Sem isso, um município com 2 empresas não-geocodificadas fica indistinguível de um
-    # município realmente vazio — e a falha do OSM é maior no interior, justamente onde
-    # estão os "desertos circulares", então o viés corre na direção da conclusão.
+    # empresas que entram no índice mas NÃO aparecem como ponto no mapa, por falta de
+    # coordenada. Depois da correção acima elas já contam para a maturidade do município;
+    # o que se perde é só a localização exata dentro dele.
     sem_coord = {}
     # o CSV traz latitude vazia, que o DuckDB lê como NULL — não como string vazia
     for mun, n in con.sql(f"SELECT municipio, count(*) FROM {T_RES} "
@@ -196,11 +200,14 @@ def apura(con=None):
         organicos = d['organicos_compost'] + n_energia
         nivel = calcula_nivel(d['coleta'], d['reciclagem'], d['tratamento'], organicos)
         nao_geo = sem_coord.get(k, 0)
+        total_emp = (d['coleta'] + d['reciclagem'] + d['tratamento']
+                     + d['organicos_compost'])
         feat['properties'].update({
             'nivel': nivel,
             'nao_geocodificadas': nao_geo,
-            # nível 0 tem dois significados muito diferentes, e o mapa precisa separá-los
-            'zero_falso': nivel == 0 and nao_geo > 0,
+            # município que tem empresa mas NENHUMA aparece como ponto: o índice está
+            # certo, mas ao abrir o município o mapa fica sem pin nenhum
+            'sem_pin': nao_geo > 0 and nao_geo >= total_emp,
             'coleta': d['coleta'], 'reciclagem': d['reciclagem'], 'tratamento': d['tratamento'],
             'organicos': organicos, 'total_iniciativas': d['total_residuos'] + n_energia,
             'faltando': elementos_faltando(d['coleta'], d['reciclagem'], d['tratamento'], organicos),
@@ -224,8 +231,8 @@ def apura(con=None):
         FROM {T_RES} WHERE regiao_administrativa != '' GROUP BY 1""").fetchall():
         falha_ra[ra_nome] = {'total': tot, 'sem_coord': int(fal),
                              'pct': round(100 * fal / tot, 1) if tot else 0.0}
-    zeros_falsos = [f['properties']['nome'] for f in geojson_mun['features']
-                    if f['properties']['zero_falso']]
+    sem_pin = [f['properties']['nome'] for f in geojson_mun['features']
+               if f['properties']['sem_pin']]
     dist = [sum(1 for f in geojson_mun['features'] if f['properties']['nivel'] == k) for k in range(5)]
     total_mun = len(geojson_mun['features'])
 
@@ -238,7 +245,7 @@ def apura(con=None):
 
     return {
         'falha_geocodificacao_ra': falha_ra,
-        'zeros_falsos': zeros_falsos,
+        'municipios_sem_pin': sem_pin,
         'total_sem_coord': sum(sem_coord.values()),
         'dist_estagio': dist_estagio,
         'estagios_por_ra': estagios_por_ra,

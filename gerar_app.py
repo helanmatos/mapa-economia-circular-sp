@@ -222,45 +222,18 @@ leg_circular = ''.join(
     for k, v in CIRCULARES.items())
 
 mw_total = round(sum(D['mw_ciclo'].values()), 1)
-# ---------- contorno do estado para o minimapa ----------
-# Um segundo mapa MapLibre custaria outro contexto WebGL só para desenhar um retângulo.
-# O contorno vira um path SVG estático e o retângulo do viewport é atualizado no JS —
-# mesmo resultado, sem o custo.
-import math
+# ---------- minimapa: sempre um nível geográfico acima ----------
+from minimapa import LARGURA as MINI_W, ALTURA as MINI_H, constroi as constroi_minimapa
 
-from shapely.geometry import shape
-from shapely.ops import unary_union
-
-_uniao = unary_union([shape(f['geometry']) for f in geojson_ra['features']])
-_uniao = _uniao.simplify(0.012, preserve_topology=True)
-MINI_W, MINI_H = 132, 116
-_lon0, _lat0, _lon1, _lat1 = _uniao.bounds
-_klon = math.cos(math.radians((_lat0 + _lat1) / 2))  # equiretangular no paralelo médio
-_larg, _alt = (_lon1 - _lon0) * _klon, (_lat1 - _lat0)
-_esc = min((MINI_W - 8) / _larg, (MINI_H - 8) / _alt)
-_dx = (MINI_W - _larg * _esc) / 2
-_dy = (MINI_H - _alt * _esc) / 2
-
-
-def _proj(lon, lat):
-    return (round((lon - _lon0) * _klon * _esc + _dx, 1),
-            round((_lat1 - lat) * _esc + _dy, 1))
-
-
-def _anel_para_path(coords):
-    pts = [_proj(x, y) for x, y in coords]
-    return 'M' + 'L'.join(f'{x} {y}' for x, y in pts) + 'Z'
-
-
-_geoms = _uniao.geoms if _uniao.geom_type == 'MultiPolygon' else [_uniao]
-mini_path = ''.join(_anel_para_path(g.exterior.coords) for g in _geoms)
-print(f'minimapa: contorno com {len(mini_path)} chars de path')
+MINIS = constroi_minimapa(geojson_ra, geojson_mun)
+print(f"minimapa: país + estado ({len(MINIS['estado']['destaques'])} RAs) + "
+      f"{len(MINIS['ra'])} recortes de RA")
 
 falha = mat['falha_geocodificacao_ra']
 _ord = sorted(falha.items(), key=lambda x: -x[1]['pct'])
 pior_ra, pior_d = _ord[0]
 melhor_ra, melhor_d = _ord[-1]
-n_zeros_falsos = len(mat['zeros_falsos'])
+n_zeros_falsos = len(mat['municipios_sem_pin'])
 total_sem_coord = mat['total_sem_coord']
 
 opcoes_ra = ''.join(f'<option value="{f["properties"]["regiao_administrativa"]}">'
@@ -372,6 +345,8 @@ select.ctrl{flex:1;min-width:0;font:inherit;font-size:12px;padding:7px 8px;borde
   background:rgba(255,255,255,.94);border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.2);
   padding:4px;pointer-events:none;user-select:none}
 #minimapa svg{display:block;width:__MINI_W__px;height:__MINI_H__px}
+#mini-rotulo{font-size:9.5px;font-weight:700;color:#5c6b5a;text-align:center;
+  padding-top:2px;letter-spacing:.02em}
 .maplibregl-ctrl-scale{background:rgba(255,255,255,.88)!important;border-color:#7a7a7a!important;
   border-width:0 1.6px 1.6px!important;color:#333!important;font-size:10.5px!important;
   font-weight:600;padding:1px 5px 2px!important}
@@ -456,22 +431,52 @@ const map = new maplibregl.Map({
 map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-right');
 map.addControl(new maplibregl.ScaleControl({maxWidth: 110, unit: 'metric'}), 'bottom-left');
 
-// retângulo do minimapa: onde a vista atual cai dentro do estado
-const MINI = {w: __MINI_W__, h: __MINI_H__, lon0: __MINI_LON0__, lat1: __MINI_LAT1__,
-              klon: __MINI_KLON__, esc: __MINI_ESC__, dx: __MINI_DX__, dy: __MINI_DY__};
-function projMini(lon, lat) {
-  return [(lon - MINI.lon0) * MINI.klon * MINI.esc + MINI.dx,
-          (MINI.lat1 - lat) * MINI.esc + MINI.dy];
+// Minimapa: sempre um nível geográfico ACIMA do que está na tela.
+//   estado    -> país, com SP destacado
+//   região    -> estado, com a RA destacada
+//   município -> a RA, com o município destacado
+const MINIS = __MINIS__;
+const MINI_W = __MINI_W__, MINI_H = __MINI_H__;
+let miniAtual = null;
+
+function recorteMinimapa() {
+  if (tema !== 'hub') {
+    // os outros temas são visões estaduais: o contexto útil é o país
+    return {dados: MINIS.pais, destaque: MINIS.pais.destaque, rotulo: MINIS.pais.rotulo};
+  }
+  if (nivel === 'municipio' && raSel && MINIS.ra[raSel]) {
+    const r = MINIS.ra[raSel];
+    return {dados: r, destaque: r.destaques[munSel] || '', rotulo: r.rotulo};
+  }
+  if (nivel === 'regiao' && raSel) {
+    return {dados: MINIS.estado, destaque: MINIS.estado.destaques[raSel] || '',
+            rotulo: MINIS.estado.rotulo};
+  }
+  return {dados: MINIS.pais, destaque: MINIS.pais.destaque, rotulo: MINIS.pais.rotulo};
 }
+
+function projMini(proj, lon, lat) {
+  return [(lon - proj.lon0) * proj.klon * proj.esc + proj.dx,
+          (proj.lat1 - lat) * proj.esc + proj.dy];
+}
+
 function atualizarMinimapa() {
   const r = $('#mini-vista');
   if (!r) return;
+  const rec = recorteMinimapa();
+  if (rec !== miniAtual) {
+    $('#mini-fundo').setAttribute('d', rec.dados.fundo);
+    $('#mini-destaque').setAttribute('d', rec.destaque);
+    $('#mini-rotulo').textContent = rec.rotulo;
+    miniAtual = rec;
+  }
+  const proj = rec.dados.proj;
   const b = map.getBounds();
-  const [x1, y1] = projMini(b.getWest(), b.getNorth());
-  const [x2, y2] = projMini(b.getEast(), b.getSouth());
-  // recorta ao quadro: em zoom baixo a vista é maior que o estado
+  const [x1, y1] = projMini(proj, b.getWest(), b.getNorth());
+  const [x2, y2] = projMini(proj, b.getEast(), b.getSouth());
+  // recorta ao quadro: em zoom baixo a vista é maior que o recorte mostrado
   const ax = Math.max(0, Math.min(x1, x2)), ay = Math.max(0, Math.min(y1, y2));
-  const bx = Math.min(MINI.w, Math.max(x1, x2)), by = Math.min(MINI.h, Math.max(y1, y2));
+  const bx = Math.min(MINI_W, Math.max(x1, x2)), by = Math.min(MINI_H, Math.max(y1, y2));
   r.setAttribute('x', ax); r.setAttribute('y', ay);
   r.setAttribute('width', Math.max(0, bx - ax));
   r.setAttribute('height', Math.max(0, by - ay));
@@ -581,10 +586,10 @@ function htmlRegiao(p, tipo) {
     cabeca = `<p class="pop-classe" style="color:${PALETA[p.classe]}">`
       + `Classe ${p.classe} — ${p.classe_desc}</p>`;
   }
-  const zf = (ehMun && (p.zero_falso === true || p.zero_falso === 'true'))
-    ? `<p class="pop-alerta">Sem registro <b>geocodificado</b>, mas há
-       <b>${p.nao_geocodificadas}</b> empresa(s) desse município na base sem coordenada.
-       O vazio aqui é de mapeamento, não necessariamente de infraestrutura.</p>` : '';
+  const zf = (ehMun && (p.sem_pin === true || p.sem_pin === 'true'))
+    ? `<p class="pop-alerta">As <b>${p.nao_geocodificadas}</b> empresa(s) deste município
+       contam no índice, mas <b>não aparecem como ponto</b> — o endereço delas não foi
+       localizado. Abrir o município não mostrará pinos.</p>` : '';
   const ctx = (TEM_CONTEXTO && ehMun && (p.populacao || p.idhm)) ? `
     <p class="pop-info">${p.populacao ? inteiro(p.populacao) + ' habitantes' : ''}${p.populacao && p.idhm ? ' · ' : ''}${p.idhm ? 'IDHM ' + num(p.idhm, 3) : ''}</p>` : '';
   const bloco = ehMun ? '' : `
@@ -716,7 +721,7 @@ function visibilidadeHub() {
   }
   if (map.getLayer('mun-zerofalso')) {
     map.setPaintProperty('mun-zerofalso', 'fill-opacity', mun ? 0.35 : 0.9);
-    map.setFilter('mun-zerofalso', ['all', ['==', ['get', 'zero_falso'], true],
+    map.setFilter('mun-zerofalso', ['all', ['==', ['get', 'sem_pin'], true],
       mun ? ['==', ['get', 'municipio_norm'], munSel]
           : ['==', ['get', 'regiao_administrativa'], raSel || '']]);
   }
@@ -730,6 +735,7 @@ function visibilidadeHub() {
   }
   $('#leg-pins').style.display = mun ? '' : 'none';
   atualizarSemCoord();
+  atualizarMinimapa();
   pintarHub();
   trilha();
 }
@@ -887,6 +893,7 @@ function trocarTema(novo) {
     aplicarFiltros();
   }
   if (ehCtx) aplicarContexto();
+  atualizarMinimapa();
 
   // cada tema tem um escopo natural: o hub retoma onde o drill-down parou, os demais
   // são visões estaduais (ou da RA filtrada). Sem isto o mapa herdava o enquadramento
@@ -950,7 +957,7 @@ function iniciar() {
     filter: ['!=', ['get', 'listras'], 'liso'], paint: hachPaint, layout: {visibility: 'none'}});
   // "sem registro geocodificado" != "sem nada": o pontilhado separa os dois casos
   map.addLayer({id: 'mun-zerofalso', type: 'fill', source: 'mun',
-    filter: ['==', ['get', 'zero_falso'], true],
+    filter: ['==', ['get', 'sem_pin'], true],
     paint: {'fill-pattern': 'pontilhado', 'fill-opacity': 0.9}, layout: {visibility: 'none'}});
   map.addLayer({id: 'mun-linha', type: 'line', source: 'mun',
     paint: {'line-color': '#fff', 'line-width': 1}, layout: {visibility: 'none'}});
@@ -1180,11 +1187,11 @@ _pct_melhor = f'{melhor_d["pct"]:.1f}'.replace('.', ',')
 _pct_pior = f'{pior_d["pct"]:.1f}'.replace('.', ',')
 nota_vies = (
     f'<b>{milhar(total_sem_coord)} das {milhar(TOTAL_BASE)} empresas ({_pct_geral}%) não têm '
-    f'coordenada</b> e ficam fora do índice — o OpenStreetMap mapeia mal ruas de cidades pequenas. '
-    f'A falha <b>não é uniforme</b>: vai de {_pct_melhor}% na {melhor_ra} a {_pct_pior}% na '
-    f'{pior_ra}, e é maior justamente no interior, onde estão os vazios. Isso empurra o resultado '
-    f'<b>na direção da própria conclusão</b>, então a diferença real entre capital e interior é '
-    f'menor do que o mapa sugere.')
+    f'coordenada</b> — o OpenStreetMap mapeia mal ruas de cidades pequenas. Elas <b>contam no '
+    f'índice</b>, porque o município está preenchido em 100% dos registros e o índice é por '
+    f'município; o que se perde é só a posição exata do ponto no mapa. A falha não é uniforme '
+    f'(de {_pct_melhor}% na {melhor_ra} a {_pct_pior}% na {pior_ra}), então a leitura afetada é '
+    f'a densidade visual de pontos, não a maturidade.')
 
 aba_contexto = '''
       <button class="aba" data-tema="contexto">Contexto
@@ -1287,13 +1294,16 @@ HTML = '''<!DOCTYPE html>
       </svg>
       <span>N</span>
     </div>
-    <div id="minimapa" title="Localização no estado">
+    <div id="minimapa">
       <svg viewBox="0 0 __MINI_W__ __MINI_H__" aria-hidden="true">
-        <path d="__MINI_PATH__" fill="#DDE7DC" stroke="#9FB89C" stroke-width="0.7"
+        <path id="mini-fundo" d="" fill="#E4EBE3" stroke="#A9BDA6" stroke-width="0.7"
               stroke-linejoin="round"/>
-        <rect id="mini-vista" x="0" y="0" width="0" height="0" fill="rgba(27,94,32,0.16)"
+        <path id="mini-destaque" d="" fill="#8BC34A" stroke="#1B5E20" stroke-width="0.9"
+              stroke-linejoin="round"/>
+        <rect id="mini-vista" x="0" y="0" width="0" height="0" fill="rgba(27,94,32,0.14)"
               stroke="#1B5E20" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
       </svg>
+      <div id="mini-rotulo"></div>
     </div>
     <aside id="painel">
       <div id="painel-topo">
@@ -1337,8 +1347,8 @@ HTML = '''<!DOCTYPE html>
           para ver as empresas.</p>
           <div class="secao">Como ler o vazio</div>
           <div class="leg-item"><span class="sw sw-zerofalso"></span>
-            <span class="leg-txt">Sem registro <b>geocodificado</b><span class="leg-sub">tem empresa
-            na base, mas sem coordenada — __N_ZEROS__ municípios</span></span></div>
+            <span class="leg-txt">Conta no índice, mas <b>sem ponto no mapa</b><span class="leg-sub">o
+            endereço não foi localizado — __N_ZEROS__ municípios</span></span></div>
           <div id="bloco-sem-coord" style="display:none">
             <a href="#" id="link-sem-coord"></a>
             <div id="corpo-sem-coord" style="display:none"></div>
@@ -1420,12 +1430,7 @@ js = (JS
       .replace('__MATCH_CIRCULAR__', json.dumps(match_circular))
       .replace('__SEM_COORD__', json.dumps(D['sem_coordenada'], ensure_ascii=False))
       .replace('__MINI_W__', str(MINI_W)).replace('__MINI_H__', str(MINI_H))
-      .replace('__MINI_LON0__', repr(round(_lon0, 6)))
-      .replace('__MINI_LAT1__', repr(round(_lat1, 6)))
-      .replace('__MINI_KLON__', repr(round(_klon, 6)))
-      .replace('__MINI_ESC__', repr(round(_esc, 6)))
-      .replace('__MINI_DX__', repr(round(_dx, 3)))
-      .replace('__MINI_DY__', repr(round(_dy, 3)))
+      .replace('__MINIS__', json.dumps(MINIS, ensure_ascii=False))
       .replace('__PALETA__', json.dumps(PALETA))
       .replace('__ESTAGIOS__', json.dumps(ESTAGIOS))
       .replace('__ESTAGIO_NOMES__', json.dumps([ESTAGIO_INFO[e][0] for e in ESTAGIOS],
@@ -1440,7 +1445,6 @@ html = (HTML
         .replace('__LEG_NIVEL__', leg_nivel)
         .replace('__LEG_ESTAGIO__', leg_estagio)
         .replace('__LEG_PINS__', leg_pins)
-        .replace('__MINI_PATH__', mini_path)
         .replace('__MINI_W__', str(MINI_W)).replace('__MINI_H__', str(MINI_H))
         .replace('__LEG_CIRCULAR__', leg_circular)
         .replace('__N_ZEROS__', str(n_zeros_falsos))

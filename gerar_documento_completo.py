@@ -119,7 +119,7 @@ IDHM_N0 = _st.mean([x[0] for x in _l if x[2] == 0])
 IDHM_N4 = _st.mean([x[0] for x in _l if x[2] == 4])
 
 FALHA_RA = sorted(mat['falha_geocodificacao_ra'].items(), key=lambda x: -x[1]['pct'])
-N_ZEROS_FALSOS = len(mat['zeros_falsos'])
+N_ZEROS_FALSOS = len(mat['municipios_sem_pin'])
 TOTAL_SEM_COORD = mat['total_sem_coord']
 
 mun_sem_registro = dist_mun[0]
@@ -295,10 +295,17 @@ P(f'A <b>cobertura territorial</b> (municípios com ao menos uma iniciativa mape
   f'<b>{pct_cobertura}</b> (520 de 645 municípios). Os 125 municípios restantes não têm nenhuma '
   'iniciativa identificada nesta etapa — o que reflete a fonte usada, não necessariamente ausência '
   'real de atividade econômica de resíduos ali.')
-P('<b>O viés de geocodificação não é uniforme — e corre a favor da conclusão</b>', h2)
-P(f'As <b>{fmt(TOTAL_SEM_COORD)} empresas sem coordenada ({pct_falhou} da base)</b> não são um '
-  'problema apenas de volume. Elas ficam fora de todos os agregados — índice de maturidade, '
-  'contagem por região, cobertura territorial — e a taxa de falha varia muito entre regiões:')
+P('<b>Geocodificação: o que ela afeta e o que não afeta</b>', h2)
+P(f'As <b>{fmt(TOTAL_SEM_COORD)} empresas sem coordenada ({pct_falhou} da base)</b> continuam '
+  'contando no índice de maturidade: o município está preenchido em <b>100% dos registros</b>, e o '
+  'índice é calculado por município — a coordenada só é necessária para desenhar o ponto no mapa. '
+  'Isso não era assim até a versão anterior deste documento, e a correção mudou números que '
+  'apareciam aqui: municípios sem nenhuma infraestrutura caíram de 125 para '
+  f'{fmt(mun_sem_registro)}, a média estadual subiu de 1,62 para {media_estadual}, e os municípios '
+  f'com a cadeia completa passaram de 23 para {fmt(dist_mun[4])}.')
+P('A correção importava porque a falha de geocodificação <b>não é uniforme entre as regiões</b> — '
+  'ela é maior justamente no interior, onde o mapa aponta os vazios, então o filtro antigo empurrava '
+  'o resultado na direção da própria conclusão:')
 dados_vies = [[Paragraph('Região Administrativa', cel_b), Paragraph('Empresas', cel_b),
                Paragraph('Sem coordenada', cel_b), Paragraph('% de falha', cel_b)]]
 for _ra, _d in FALHA_RA:
@@ -316,20 +323,15 @@ tbl_vies.setStyle(TableStyle([
 ]))
 story.append(tbl_vies)
 SP_(8)
-P('Em vermelho as quatro regiões com maior perda; em verde as duas com menor. <b>As regiões que o '
-  'mapa aponta como mais vazias estão entre as que mais perdem dados.</b> O OpenStreetMap mapeia '
-  'pior as ruas de cidades pequenas do interior, então o interior aparece mais vazio em parte por '
-  'artefato de fonte. O viés empurra o resultado na direção da própria conclusão, e por isso a '
-  'diferença real entre capital e interior é menor do que os números sugerem.')
-P('Isso não anula o achado: a Grande SP tem quase 40 vezes mais iniciativas por município que '
-  'Itapeva, e 14 pontos percentuais de diferença na taxa de geocodificação não explicam uma '
-  'razão dessa magnitude. Mas qualquer citação dos "desertos circulares" precisa vir com esta '
-  'ressalva.')
-P(f'A consequência mais concreta: <b>{N_ZEROS_FALSOS} dos {fmt(mun_sem_registro)} municípios '
-  f'classificados como "sem infraestrutura" têm empresas na base</b>, apenas sem coordenada. '
-  'No mapa eles agora aparecem com textura pontilhada e o popup diz explicitamente que ali o '
-  'vazio é de mapeamento, não necessariamente de infraestrutura — "sem registro geocodificado" '
-  'e "sem nada" deixaram de ser a mesma cor.')
+P('Em vermelho as quatro regiões com maior perda; em verde as duas com menor. Com o índice '
+  'calculado por município, essa diferença deixou de contaminar a maturidade — <b>o que ela ainda '
+  'afeta é a densidade visual de pontos</b>: o interior aparece com menos pinos do que tem, e '
+  'qualquer leitura feita "no olho" sobre a quantidade de pontos herda esse viés.')
+P(f'Em <b>{N_ZEROS_FALSOS} municípios</b> existem empresas mas nenhuma delas tem coordenada, então '
+  'abrir o município não mostra pino nenhum embora o índice acuse serviços. Esses casos recebem '
+  'textura pontilhada no mapa e um aviso no popup. Além disso, ao entrar numa região ou município '
+  'o painel traz um link que abre a relação das empresas sem coordenada — CNPJ, atividade e '
+  'endereço —, de modo que a lacuna é verificável e corrigível, não apenas declarada.')
 
 P('<b>Casamento de nomes entre fontes</b>: as três fontes grafam o mesmo município de formas '
   'diferentes — a Receita Federal em maiúsculas sem acento, a ANEEL com acento e capitalização '
@@ -580,10 +582,10 @@ P('No agregado por região o quadro parece muito melhor do que é: <b>todas as 1
   'entre essas duas leituras — região aparentemente completa, municípios majoritariamente incompletos '
   '— é a informação útil: <b>o problema em São Paulo não é a ausência de infraestrutura circular na '
   'região, é a distância até ela dentro da própria região.</b>')
-P(f'<b>Ressalva necessária:</b> {N_ZEROS_FALSOS} dos {fmt(mun_sem_registro)} municípios sem '
-  'registro têm empresas na base sem coordenada, e a falha de geocodificação é maior justamente '
-  'nas regiões mais vazias (seção 4). O número real de municípios sem nenhuma infraestrutura é '
-  'menor que o apurado, e a leitura correta é "sem registro georreferenciável nesta fonte".')
+P('<b>Ressalva:</b> estes números já incluem as empresas sem coordenada, contadas pelo município '
+  '(ver seção 4). A leitura correta de "sem infraestrutura" é "nenhum estabelecimento dos 4 '
+  'serviços registrado na Receita Federal com sede naquele município" — o que não exclui operação '
+  'informal, cooperativa não formalizada ou atendimento por município vizinho.')
 P('Isso muda o tipo de política que faz sentido. Se o vazio fosse entre regiões, a resposta seria '
   'levar infraestrutura para as regiões desassistidas. Como o vazio é interno, a resposta passa mais '
   'por consórcios intermunicipais, logística de transbordo e escala compartilhada do que por novas '
