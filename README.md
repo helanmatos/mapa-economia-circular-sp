@@ -93,6 +93,8 @@ As regiões que o mapa aponta como mais vazias são, em boa parte, as que mais p
 
 Consequência direta: **26 dos 125 municípios classificados como "sem infraestrutura" têm empresas na base**, apenas sem coordenada. O mapa agora os marca com **pontilhado** e o popup diz explicitamente que ali o vazio é de mapeamento, não necessariamente de infraestrutura. "Sem registro geocodificado" e "sem nada" deixaram de ser a mesma cor.
 
+E a ressalva deixou de ser só um aviso: ao entrar numa região ou município, o painel traz o link **"N empresas sem geolocalização definida"**, que abre a lista das empresas que ficaram de fora — CNPJ, atividade e endereço, dez por vez. Como 83% delas não têm nome fantasia, é o CNPJ e o endereço que tornam a lista utilizável: dá para conferir na Receita ou corrigir a coordenada à mão. O usuário passa a saber **quais** faltam, não só quantas.
+
 ## Limitações conhecidas
 
 Fontes institucionais adicionais previstas no escopo (CETESB, SNIS, cadastro de cooperativas de catadores via SINIR) estão indisponíveis até 25/10/2026 por conta do período de defeso eleitoral (Lei 9.504/1997, art. 73 VI "b"). Reuso, remanufatura e logística reversa não têm CNAE próprio na Receita Federal e por isso não aparecem na base atual — ver a análise estratégica para detalhes.

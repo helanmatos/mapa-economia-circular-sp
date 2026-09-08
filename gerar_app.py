@@ -222,6 +222,40 @@ leg_circular = ''.join(
     for k, v in CIRCULARES.items())
 
 mw_total = round(sum(D['mw_ciclo'].values()), 1)
+# ---------- contorno do estado para o minimapa ----------
+# Um segundo mapa MapLibre custaria outro contexto WebGL só para desenhar um retângulo.
+# O contorno vira um path SVG estático e o retângulo do viewport é atualizado no JS —
+# mesmo resultado, sem o custo.
+import math
+
+from shapely.geometry import shape
+from shapely.ops import unary_union
+
+_uniao = unary_union([shape(f['geometry']) for f in geojson_ra['features']])
+_uniao = _uniao.simplify(0.012, preserve_topology=True)
+MINI_W, MINI_H = 132, 116
+_lon0, _lat0, _lon1, _lat1 = _uniao.bounds
+_klon = math.cos(math.radians((_lat0 + _lat1) / 2))  # equiretangular no paralelo médio
+_larg, _alt = (_lon1 - _lon0) * _klon, (_lat1 - _lat0)
+_esc = min((MINI_W - 8) / _larg, (MINI_H - 8) / _alt)
+_dx = (MINI_W - _larg * _esc) / 2
+_dy = (MINI_H - _alt * _esc) / 2
+
+
+def _proj(lon, lat):
+    return (round((lon - _lon0) * _klon * _esc + _dx, 1),
+            round((_lat1 - lat) * _esc + _dy, 1))
+
+
+def _anel_para_path(coords):
+    pts = [_proj(x, y) for x, y in coords]
+    return 'M' + 'L'.join(f'{x} {y}' for x, y in pts) + 'Z'
+
+
+_geoms = _uniao.geoms if _uniao.geom_type == 'MultiPolygon' else [_uniao]
+mini_path = ''.join(_anel_para_path(g.exterior.coords) for g in _geoms)
+print(f'minimapa: contorno com {len(mini_path)} chars de path')
+
 falha = mat['falha_geocodificacao_ra']
 _ord = sorted(falha.items(), key=lambda x: -x[1]['pct'])
 pior_ra, pior_d = _ord[0]
@@ -327,6 +361,25 @@ select.ctrl{flex:1;min-width:0;font:inherit;font-size:12px;padding:7px 8px;borde
 .vazio{font-size:12px;color:#B00020;background:#FFEBEE;border-radius:7px;padding:9px 11px;
   margin-top:8px;line-height:1.4}
 
+/* ---------- controles do canto superior direito ---------- */
+#norte{position:absolute;top:112px;right:10px;z-index:2;width:29px;height:40px;
+  background:rgba(255,255,255,.94);border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  pointer-events:none;user-select:none}
+#norte svg{width:17px;height:17px;display:block}
+#norte span{font-size:9.5px;font-weight:700;color:#1B5E20;line-height:1;margin-top:1px}
+#minimapa{position:absolute;top:160px;right:10px;z-index:2;
+  background:rgba(255,255,255,.94);border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.2);
+  padding:4px;pointer-events:none;user-select:none}
+#minimapa svg{display:block;width:__MINI_W__px;height:__MINI_H__px}
+.maplibregl-ctrl-scale{background:rgba(255,255,255,.88)!important;border-color:#7a7a7a!important;
+  border-width:0 1.6px 1.6px!important;color:#333!important;font-size:10.5px!important;
+  font-weight:600;padding:1px 5px 2px!important}
+@media (max-width:760px){
+  #minimapa{display:none}
+  #norte{top:106px}
+}
+
 /* ---------- popups ---------- */
 .maplibregl-popup-content{font-family:inherit;font-size:12.5px;padding:12px 14px;border-radius:9px;
   box-shadow:0 4px 18px rgba(0,0,0,.16)}
@@ -347,6 +400,23 @@ select.ctrl{flex:1;min-width:0;font:inherit;font-size:12px;padding:7px 8px;borde
 .pop-ano{font-size:10.3px;color:#999;font-weight:400;margin:0}
 .pop-alerta{font-size:11px;color:#8a6d3b;background:#FFF8E1;border-radius:6px;padding:7px 9px;
   margin:0 0 7px;line-height:1.4}
+#bloco-sem-coord{margin-top:9px}
+#link-sem-coord{display:inline-block;font-size:11.8px;color:#8a6d3b;font-weight:600;
+  text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+#link-sem-coord:hover{color:#6d5530}
+#corpo-sem-coord{margin-top:7px;max-height:260px;overflow-y:auto;border:1px solid #F0D9A8;
+  border-radius:8px;background:#FFFDF7;padding:2px 0}
+#ver-mais{width:100%;margin-top:6px;padding:7px;font:inherit;font-size:11.5px;font-weight:600;
+  color:#8a6d3b;background:#FFF8E1;border:1px solid #F0D9A8;border-radius:7px;cursor:pointer}
+#ver-mais:hover{background:#FFF3D6}
+.sc-mun{font-size:10.5px;font-weight:700;color:#8a6d3b;text-transform:uppercase;
+  letter-spacing:.03em;padding:8px 11px 3px;position:sticky;top:0;background:#FFFDF7}
+.sc-item{padding:5px 11px 6px;border-bottom:1px solid #F5EDDC;font-size:11px;line-height:1.4}
+.sc-item:last-child{border-bottom:0}
+.sc-nome{font-weight:600;color:#333}
+.sc-cnpj{color:#8a8a8a;font-variant-numeric:tabular-nums;font-size:10.5px}
+.sc-det{color:#777;font-size:10.5px}
+.sc-fora{color:#B00020}
 .sw.sw-zerofalso{background:#B00020;position:relative;overflow:hidden}
 .sw.sw-zerofalso::after{content:'';position:absolute;inset:0;
   background:radial-gradient(circle at 30% 30%,#fff 1.4px,transparent 1.5px),
@@ -372,6 +442,7 @@ const matchCamada = __MATCH_CAMADA__;
 const matchMaterial = __MATCH_MATERIAL__;
 const matchCiclo = __MATCH_CICLO__;
 const matchCircular = __MATCH_CIRCULAR__;
+const semCoordenada = __SEM_COORD__;
 const PALETA = __PALETA__;
 const ESTAGIOS = __ESTAGIOS__;
 const ESTAGIO_NOMES = __ESTAGIO_NOMES__;
@@ -382,7 +453,30 @@ const map = new maplibregl.Map({
   style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
   center: [-48.6, -22.3], zoom: 6,
 });
-map.addControl(new maplibregl.NavigationControl(), 'top-right');
+map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-right');
+map.addControl(new maplibregl.ScaleControl({maxWidth: 110, unit: 'metric'}), 'bottom-left');
+
+// retângulo do minimapa: onde a vista atual cai dentro do estado
+const MINI = {w: __MINI_W__, h: __MINI_H__, lon0: __MINI_LON0__, lat1: __MINI_LAT1__,
+              klon: __MINI_KLON__, esc: __MINI_ESC__, dx: __MINI_DX__, dy: __MINI_DY__};
+function projMini(lon, lat) {
+  return [(lon - MINI.lon0) * MINI.klon * MINI.esc + MINI.dx,
+          (MINI.lat1 - lat) * MINI.esc + MINI.dy];
+}
+function atualizarMinimapa() {
+  const r = $('#mini-vista');
+  if (!r) return;
+  const b = map.getBounds();
+  const [x1, y1] = projMini(b.getWest(), b.getNorth());
+  const [x2, y2] = projMini(b.getEast(), b.getSouth());
+  // recorta ao quadro: em zoom baixo a vista é maior que o estado
+  const ax = Math.max(0, Math.min(x1, x2)), ay = Math.max(0, Math.min(y1, y2));
+  const bx = Math.min(MINI.w, Math.max(x1, x2)), by = Math.min(MINI.h, Math.max(y1, y2));
+  r.setAttribute('x', ax); r.setAttribute('y', ay);
+  r.setAttribute('width', Math.max(0, bx - ax));
+  r.setAttribute('height', Math.max(0, by - ay));
+}
+map.on('move', atualizarMinimapa);
 
 /* ================= estado ================= */
 let tema = 'hub';
@@ -635,8 +729,66 @@ function visibilidadeHub() {
     map.setFilter('pontos-hub', ['==', ['get', 'municipio_norm'], munSel || '__nada__']);
   }
   $('#leg-pins').style.display = mun ? '' : 'none';
+  atualizarSemCoord();
   pintarHub();
   trilha();
+}
+
+// Lista as empresas que existem na base mas não entraram no mapa. Aparece no nível
+// região (todas as da RA) e no nível município (só as dele) — no estado seriam 1.790,
+// o que não ajudaria ninguém.
+const PAGINA_SEM_COORD = 10;
+let listaSemCoord = [];      // as empresas do recorte atual
+let mostradosSemCoord = 0;   // quantas já foram renderizadas
+
+function itemSemCoordHTML(e, comMunicipio) {
+  return `
+    <div class="sc-item">
+      <div class="sc-nome">${e.nome || '<span class="sc-det">(sem nome fantasia)</span>'}</div>
+      <div class="sc-cnpj">${e.cnpj}</div>
+      <div class="sc-det">${e.atividade}</div>
+      <div class="sc-det">${e.endereco}${comMunicipio ? ' · ' + e.municipio : ''}</div>
+      ${e.motivo === 'fora'
+        ? '<div class="sc-det sc-fora">coordenada caiu fora de SP — descartada</div>' : ''}
+    </div>`;
+}
+
+function renderizarMaisSemCoord() {
+  const corpo = $('#corpo-sem-coord');
+  const fatia = listaSemCoord.slice(mostradosSemCoord, mostradosSemCoord + PAGINA_SEM_COORD);
+  // no nível município o nome dele já está na trilha, então não repete em cada item
+  corpo.insertAdjacentHTML('beforeend',
+    fatia.map(e => itemSemCoordHTML(e, nivel !== 'municipio')).join(''));
+  mostradosSemCoord += fatia.length;
+
+  const restam = listaSemCoord.length - mostradosSemCoord;
+  const btn = $('#ver-mais');
+  btn.style.display = restam > 0 ? '' : 'none';
+  if (restam > 0) {
+    btn.textContent = `Ver mais ${Math.min(restam, PAGINA_SEM_COORD)} (faltam ${restam})`;
+  }
+}
+
+// Lista as empresas que existem na base mas não entraram no mapa. Aparece no nível
+// região (todas as da RA) e no nível município (só as dele) — no estado seriam 1.790,
+// o que não ajudaria ninguém. Começa fechada: é uma ressalva, não o conteúdo principal.
+function atualizarSemCoord() {
+  const bloco = $('#bloco-sem-coord');
+  if (nivel === 'estado') { bloco.style.display = 'none'; return; }
+  listaSemCoord = nivel === 'municipio'
+    ? semCoordenada.filter(e => e.municipio_norm === munSel)
+    : semCoordenada.filter(e => e.ra === raSel);
+  if (!listaSemCoord.length) { bloco.style.display = 'none'; return; }
+
+  bloco.style.display = '';
+  const n = listaSemCoord.length;
+  $('#link-sem-coord').textContent =
+    `${inteiro(n)} ${n === 1 ? 'empresa sem geolocalização definida' : 'empresas sem geolocalização definida'}`;
+  // volta ao estado fechado a cada troca de recorte
+  $('#corpo-sem-coord').style.display = 'none';
+  $('#corpo-sem-coord').innerHTML = '';
+  $('#ver-mais').style.display = 'none';
+  mostradosSemCoord = 0;
 }
 
 function trilha() {
@@ -903,6 +1055,7 @@ function iniciar() {
     map.on('mouseleave', id, () => map.getCanvas().style.cursor = '');
   });
 
+  atualizarMinimapa();
   map.resize(); map.triggerRepaint();
   let lw = 0, lh = 0, mexeu = false;
   map.on('dragstart', () => mexeu = true);
@@ -916,6 +1069,7 @@ function iniciar() {
     // load e o fitBounds inicial sai com zoom errado em qualquer um deles
     const noEstado = tema === 'hub' ? nivel === 'estado' : !filtroRA;
     if (noEstado && !mexeu) enquadrarEstado(false);
+    atualizarMinimapa();
     map.triggerRepaint();
   }).observe(map.getContainer());
 }
@@ -989,6 +1143,21 @@ document.querySelectorAll('.filtro-ra').forEach(s => s.addEventListener('change'
     if (fs.length) map.fitBounds(limitesDe(fs), {padding: 30, maxZoom: 10, duration: 600});
   } else enquadrarEstado(true);
 }));
+
+$('#link-sem-coord').addEventListener('click', (ev) => {
+  ev.preventDefault();
+  const corpo = $('#corpo-sem-coord');
+  const fechado = corpo.style.display === 'none';
+  corpo.style.display = fechado ? '' : 'none';
+  $('#ver-mais').style.display = 'none';
+  if (fechado && mostradosSemCoord === 0) renderizarMaisSemCoord();
+  else if (fechado) {
+    const restam = listaSemCoord.length - mostradosSemCoord;
+    if (restam > 0) $('#ver-mais').style.display = '';
+  }
+});
+
+$('#ver-mais').addEventListener('click', renderizarMaisSemCoord);
 
 const painel = $('#painel');
 $('#recolher').addEventListener('click', () => {
@@ -1111,6 +1280,21 @@ HTML = '''<!DOCTYPE html>
 
   <div id="corpo">
     <div id="map"></div>
+    <div id="norte" title="Norte geográfico">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2 L15.4 13 L12 10.8 L8.6 13 Z" fill="#1B5E20"/>
+        <path d="M12 22 L8.6 13 L12 15.2 L15.4 13 Z" fill="#c9c9c9"/>
+      </svg>
+      <span>N</span>
+    </div>
+    <div id="minimapa" title="Localização no estado">
+      <svg viewBox="0 0 __MINI_W__ __MINI_H__" aria-hidden="true">
+        <path d="__MINI_PATH__" fill="#DDE7DC" stroke="#9FB89C" stroke-width="0.7"
+              stroke-linejoin="round"/>
+        <rect id="mini-vista" x="0" y="0" width="0" height="0" fill="rgba(27,94,32,0.16)"
+              stroke="#1B5E20" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+      </svg>
+    </div>
     <aside id="painel">
       <div id="painel-topo">
         <div id="painel-titulo">Hub Circular</div>
@@ -1155,6 +1339,11 @@ HTML = '''<!DOCTYPE html>
           <div class="leg-item"><span class="sw sw-zerofalso"></span>
             <span class="leg-txt">Sem registro <b>geocodificado</b><span class="leg-sub">tem empresa
             na base, mas sem coordenada — __N_ZEROS__ municípios</span></span></div>
+          <div id="bloco-sem-coord" style="display:none">
+            <a href="#" id="link-sem-coord"></a>
+            <div id="corpo-sem-coord" style="display:none"></div>
+            <button id="ver-mais" style="display:none">Ver mais</button>
+          </div>
           <p class="nota">__NOTA_VIES__</p>
         </div>
 
@@ -1229,6 +1418,14 @@ js = (JS
       .replace('__MATCH_MATERIAL__', json.dumps(match_material))
       .replace('__MATCH_CICLO__', json.dumps(match_ciclo))
       .replace('__MATCH_CIRCULAR__', json.dumps(match_circular))
+      .replace('__SEM_COORD__', json.dumps(D['sem_coordenada'], ensure_ascii=False))
+      .replace('__MINI_W__', str(MINI_W)).replace('__MINI_H__', str(MINI_H))
+      .replace('__MINI_LON0__', repr(round(_lon0, 6)))
+      .replace('__MINI_LAT1__', repr(round(_lat1, 6)))
+      .replace('__MINI_KLON__', repr(round(_klon, 6)))
+      .replace('__MINI_ESC__', repr(round(_esc, 6)))
+      .replace('__MINI_DX__', repr(round(_dx, 3)))
+      .replace('__MINI_DY__', repr(round(_dy, 3)))
       .replace('__PALETA__', json.dumps(PALETA))
       .replace('__ESTAGIOS__', json.dumps(ESTAGIOS))
       .replace('__ESTAGIO_NOMES__', json.dumps([ESTAGIO_INFO[e][0] for e in ESTAGIOS],
@@ -1243,6 +1440,8 @@ html = (HTML
         .replace('__LEG_NIVEL__', leg_nivel)
         .replace('__LEG_ESTAGIO__', leg_estagio)
         .replace('__LEG_PINS__', leg_pins)
+        .replace('__MINI_PATH__', mini_path)
+        .replace('__MINI_W__', str(MINI_W)).replace('__MINI_H__', str(MINI_H))
         .replace('__LEG_CIRCULAR__', leg_circular)
         .replace('__N_ZEROS__', str(n_zeros_falsos))
         .replace('__NOTA_VIES__', nota_vies)
