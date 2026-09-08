@@ -16,7 +16,7 @@ import os
 
 import duckdb
 
-from dados_app import CAMADAS, MATERIAIS, CICLOS, carrega
+from dados_app import CAMADAS, MATERIAIS, CICLOS, CIRCULARES, SEM_CNAE_PROPRIO, carrega
 from maturidade import NIVEL_INFO, CLASSE_INFO, ESTAGIO_INFO, ESTAGIOS, PALETA
 
 SAIDA = 'index.html'
@@ -128,6 +128,11 @@ for k, v in MATERIAIS.items():
     match_material += [k, v['cor']]
 match_material.append('#999999')
 
+match_circular = ['match', ['get', 'circular']]
+for k, v in CIRCULARES.items():
+    match_circular += [k, v['cor']]
+match_circular.append('#999999')
+
 match_ciclo = ['match', ['get', 'ciclo']]
 for k, v in CICLOS.items():
     match_ciclo += [k, v['cor']]
@@ -205,7 +210,25 @@ if TEM_CONTEXTO:
     }
     print(f"cruzamento: r(IDHM)={cruz['r_idhm']:+.3f} r(log pop)={cruz['r_pop']:+.3f}")
 
+# na legenda, as 3 categorias sem CNAE próprio aparecem com zero de propósito: a
+# ausência delas é o achado do item 4 do escopo, não uma omissão da visualização
+leg_circular = ''.join(
+    item_legenda(v['cor'],
+                 f"{v['nome']}<span class=\"leg-sub\">"
+                 + (f"{milhar(D['conta_circular'][k])} iniciativas"
+                    if k not in SEM_CNAE_PROPRIO
+                    else "sem CNAE próprio na Receita Federal — não capturável por esta fonte")
+                 + "</span>")
+    for k, v in CIRCULARES.items())
+
 mw_total = round(sum(D['mw_ciclo'].values()), 1)
+falha = mat['falha_geocodificacao_ra']
+_ord = sorted(falha.items(), key=lambda x: -x[1]['pct'])
+pior_ra, pior_d = _ord[0]
+melhor_ra, melhor_d = _ord[-1]
+n_zeros_falsos = len(mat['zeros_falsos'])
+total_sem_coord = mat['total_sem_coord']
+
 opcoes_ra = ''.join(f'<option value="{f["properties"]["regiao_administrativa"]}">'
                     f'{f["properties"]["regiao_administrativa"]}</option>'
                     for f in sorted(geojson_ra['features'],
@@ -322,6 +345,13 @@ select.ctrl{flex:1;min-width:0;font:inherit;font-size:12px;padding:7px 8px;borde
 .pop-aprox{color:#b26a00;font-size:10.5px;margin-top:4px}
 .pop-dica{font-size:10.8px;color:#8a8a8a;margin:7px 0 0}
 .pop-ano{font-size:10.3px;color:#999;font-weight:400;margin:0}
+.pop-alerta{font-size:11px;color:#8a6d3b;background:#FFF8E1;border-radius:6px;padding:7px 9px;
+  margin:0 0 7px;line-height:1.4}
+.sw.sw-zerofalso{background:#B00020;position:relative;overflow:hidden}
+.sw.sw-zerofalso::after{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 30% 30%,#fff 1.4px,transparent 1.5px),
+             radial-gradient(circle at 75% 75%,#fff 1.4px,transparent 1.5px);
+  background-size:9px 9px}
 
 @media (max-width:760px){
   #topo-linha{padding:8px 12px 0}
@@ -341,6 +371,7 @@ const matchEstagio = __MATCH_ESTAGIO__;
 const matchCamada = __MATCH_CAMADA__;
 const matchMaterial = __MATCH_MATERIAL__;
 const matchCiclo = __MATCH_CICLO__;
+const matchCircular = __MATCH_CIRCULAR__;
 const PALETA = __PALETA__;
 const ESTAGIOS = __ESTAGIOS__;
 const ESTAGIO_NOMES = __ESTAGIO_NOMES__;
@@ -369,6 +400,7 @@ let raSel = null, munSel = null, munNome = null;
 const ESCALA_PADRAO = {estado: 'classe', regiao: 'estagio', municipio: 'estagio'};
 let corHub = ESCALA_PADRAO.estado;   // classe | estagio
 let modo = 'pontos';           // pontos | calor  (temas tratamento/biologico)
+let corTrat = 'camada';        // camada | circular  (tema tratamento)
 let filtroRA = '';             // filtro global de RA nos temas de pontos
 
 const $ = (s) => document.querySelector(s);
@@ -397,6 +429,19 @@ function enquadrarEstado(anim) {
 const vis = (id, v) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v ? 'visible' : 'none'); };
 
 /* ================= hachura ================= */
+function registraPontilhado(nome, tile, raio, alpha) {
+  const c = document.createElement('canvas');
+  c.width = c.height = tile;
+  const x = c.getContext('2d');
+  x.clearRect(0, 0, tile, tile);
+  x.fillStyle = `rgba(255,255,255,${alpha})`;
+  // dois pontos por ladrilho, deslocados, para o padrão não formar linhas
+  [[tile * 0.25, tile * 0.25], [tile * 0.75, tile * 0.75]].forEach(([px, py]) => {
+    x.beginPath(); x.arc(px, py, raio, 0, Math.PI * 2); x.fill();
+  });
+  map.addImage(nome, x.getImageData(0, 0, tile, tile), {pixelRatio: 2});
+}
+
 function registraHachura(nome, tile, largura, alpha, passos) {
   const c = document.createElement('canvas');
   c.width = c.height = tile;
@@ -442,6 +487,10 @@ function htmlRegiao(p, tipo) {
     cabeca = `<p class="pop-classe" style="color:${PALETA[p.classe]}">`
       + `Classe ${p.classe} — ${p.classe_desc}</p>`;
   }
+  const zf = (ehMun && (p.zero_falso === true || p.zero_falso === 'true'))
+    ? `<p class="pop-alerta">Sem registro <b>geocodificado</b>, mas há
+       <b>${p.nao_geocodificadas}</b> empresa(s) desse município na base sem coordenada.
+       O vazio aqui é de mapeamento, não necessariamente de infraestrutura.</p>` : '';
   const ctx = (TEM_CONTEXTO && ehMun && (p.populacao || p.idhm)) ? `
     <p class="pop-info">${p.populacao ? inteiro(p.populacao) + ' habitantes' : ''}${p.populacao && p.idhm ? ' · ' : ''}${p.idhm ? 'IDHM ' + num(p.idhm, 3) : ''}</p>` : '';
   const bloco = ehMun ? '' : `
@@ -449,7 +498,7 @@ function htmlRegiao(p, tipo) {
     <p class="pop-info pop-cob"><b>${p.n_vazios} de ${p.n_mun} municípios (${num(p.pct_vazio)}%)</b> sem nenhum registro</p>
     <p class="pop-info">Serviços presentes em algum ponto da região: <b>${p.servicos_presentes} de 4</b></p>`;
   return `
-    <p class="pop-nome">${titulo}</p>${sub}${cabeca}${ctx}${bloco}
+    <p class="pop-nome">${titulo}</p>${sub}${cabeca}${zf}${ctx}${bloco}
     <table class="pop-tab">
       <tr><td>Coleta</td><td>${inteiro(p.coleta)}</td></tr>
       <tr><td>Reciclagem</td><td>${inteiro(p.reciclagem)}</td></tr>
@@ -558,6 +607,7 @@ function visibilidadeHub() {
   const est = nivel === 'estado', reg = nivel === 'regiao', mun = nivel === 'municipio';
   vis('ra-fill', est); vis('ra-hachura', est && corHub === 'classe'); vis('ra-linha', est);
   vis('mun-fill', reg || mun); vis('mun-hachura', (reg || mun) && corHub === 'classe'); vis('mun-linha', reg || mun);
+  vis('mun-zerofalso', reg || mun);
   vis('pontos-hub', mun);
   if (map.getLayer('mun-fill')) {
     map.setPaintProperty('mun-fill', 'fill-opacity', mun ? OP_FRACA : OP_CHEIA);
@@ -567,6 +617,12 @@ function visibilidadeHub() {
   if (map.getLayer('mun-hachura')) {
     map.setPaintProperty('mun-hachura', 'fill-opacity', mun ? 0.3 : 0.85);
     map.setFilter('mun-hachura', ['all', ['!=', ['get', 'listras'], 'liso'],
+      mun ? ['==', ['get', 'municipio_norm'], munSel]
+          : ['==', ['get', 'regiao_administrativa'], raSel || '']]);
+  }
+  if (map.getLayer('mun-zerofalso')) {
+    map.setPaintProperty('mun-zerofalso', 'fill-opacity', mun ? 0.35 : 0.9);
+    map.setFilter('mun-zerofalso', ['all', ['==', ['get', 'zero_falso'], true],
       mun ? ['==', ['get', 'municipio_norm'], munSel]
           : ['==', ['get', 'regiao_administrativa'], raSel || '']]);
   }
@@ -659,15 +715,16 @@ function trocarTema(novo) {
   const ehPontos = novo === 'tratamento' || novo === 'biologico';
 
   // hub
-  ['ra-fill', 'ra-hachura', 'ra-linha', 'mun-fill', 'mun-hachura', 'mun-linha', 'pontos-hub']
-    .forEach(id => vis(id, false));
+  ['ra-fill', 'ra-hachura', 'ra-linha', 'mun-fill', 'mun-hachura', 'mun-linha',
+   'mun-zerofalso', 'pontos-hub'].forEach(id => vis(id, false));
   vis('ctx-fill', ehCtx); vis('ctx-linha', ehCtx);
   vis('pontos-tema', ehPontos && modo === 'pontos');
   vis('calor-tema', ehPontos && modo === 'calor');
 
   if (ehHub) { visibilidadeHub(); }
   if (ehPontos) {
-    map.setPaintProperty('pontos-tema', 'circle-color', novo === 'biologico' ? matchCiclo : matchCamada);
+    map.setPaintProperty('pontos-tema', 'circle-color', novo === 'biologico'
+      ? matchCiclo : (corTrat === 'circular' ? matchCircular : matchCamada));
     // no ciclo biológico o raio conta potência: uma usina de 300 MW não pode ter o
     // mesmo peso visual de uma de 0,5 MW
     map.setPaintProperty('pontos-tema', 'circle-radius', novo === 'biologico'
@@ -712,6 +769,7 @@ function aplicarContexto() {
 function iniciar() {
   registraHachura('hach-leve', 32, 3, 0.6, 2);
   registraHachura('hach-forte', 32, 4, 0.9, 4);
+  registraPontilhado('pontilhado', 18, 2.6, 0.95);
 
   map.addSource('ra', {type: 'geojson', data: geojsonRA});
   map.addSource('mun', {type: 'geojson', data: geojsonMun});
@@ -738,6 +796,10 @@ function iniciar() {
     paint: {'fill-color': matchClasse, 'fill-opacity': OP_CHEIA}, layout: {visibility: 'none'}});
   map.addLayer({id: 'mun-hachura', type: 'fill', source: 'mun',
     filter: ['!=', ['get', 'listras'], 'liso'], paint: hachPaint, layout: {visibility: 'none'}});
+  // "sem registro geocodificado" != "sem nada": o pontilhado separa os dois casos
+  map.addLayer({id: 'mun-zerofalso', type: 'fill', source: 'mun',
+    filter: ['==', ['get', 'zero_falso'], true],
+    paint: {'fill-pattern': 'pontilhado', 'fill-opacity': 0.9}, layout: {visibility: 'none'}});
   map.addLayer({id: 'mun-linha', type: 'line', source: 'mun',
     paint: {'line-color': '#fff', 'line-width': 1}, layout: {visibility: 'none'}});
 
@@ -893,6 +955,17 @@ document.querySelectorAll('[data-corhub]').forEach(b => b.addEventListener('clic
   visibilidadeHub();
 }));
 
+document.querySelectorAll('[data-cor-trat]').forEach(b => b.addEventListener('click', () => {
+  corTrat = b.dataset.corTrat;
+  document.querySelectorAll('[data-cor-trat]').forEach(x => x.classList.toggle('on', x === b));
+  // as camadas continuam filtrando; o que muda é só a cor e qual legenda aparece
+  $('#leg-circular').style.display = corTrat === 'circular' ? '' : 'none';
+  if (map.getLayer('pontos-tema')) {
+    map.setPaintProperty('pontos-tema', 'circle-color',
+      corTrat === 'circular' ? matchCircular : matchCamada);
+  }
+}));
+
 document.querySelectorAll('[data-modo]').forEach(b => b.addEventListener('click', () => {
   modo = b.dataset.modo;
   document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === modo));
@@ -929,6 +1002,20 @@ if (window.matchMedia('(max-width: 760px)').matches) {
 
 if (map.isStyleLoaded()) iniciar(); else map.once('style.load', iniciar);
 '''
+
+# decimais formatados em variável separada — encadear .replace('.', ',') na frase
+# inteira trocaria também os pontos finais da prosa
+TOTAL_BASE = 10509
+_pct_geral = f'{100 * total_sem_coord / TOTAL_BASE:.0f}'
+_pct_melhor = f'{melhor_d["pct"]:.1f}'.replace('.', ',')
+_pct_pior = f'{pior_d["pct"]:.1f}'.replace('.', ',')
+nota_vies = (
+    f'<b>{milhar(total_sem_coord)} das {milhar(TOTAL_BASE)} empresas ({_pct_geral}%) não têm '
+    f'coordenada</b> e ficam fora do índice — o OpenStreetMap mapeia mal ruas de cidades pequenas. '
+    f'A falha <b>não é uniforme</b>: vai de {_pct_melhor}% na {melhor_ra} a {_pct_pior}% na '
+    f'{pior_ra}, e é maior justamente no interior, onde estão os vazios. Isso empurra o resultado '
+    f'<b>na direção da própria conclusão</b>, então a diferença real entre capital e interior é '
+    f'menor do que o mapa sugere.')
 
 aba_contexto = '''
       <button class="aba" data-tema="contexto">Contexto
@@ -1064,6 +1151,11 @@ HTML = '''<!DOCTYPE html>
           <div id="hub-vazio" style="display:none"></div>
           <p class="dica">Clique numa região para ver os municípios; clique num município
           para ver as empresas.</p>
+          <div class="secao">Como ler o vazio</div>
+          <div class="leg-item"><span class="sw sw-zerofalso"></span>
+            <span class="leg-txt">Sem registro <b>geocodificado</b><span class="leg-sub">tem empresa
+            na base, mas sem coordenada — __N_ZEROS__ municípios</span></span></div>
+          <p class="nota">__NOTA_VIES__</p>
         </div>
 
         <!-- ---------- TRATAMENTO ---------- -->
@@ -1076,6 +1168,19 @@ HTML = '''<!DOCTYPE html>
             <button data-modo="calor">Densidade</button>
           </div>
           <div class="kpis" id="contagem"></div>
+          <div class="secao">Colorir por</div>
+          <div class="seg" style="margin-bottom:4px">
+            <button data-cor-trat="camada" class="on">Camada da cadeia</button>
+            <button data-cor-trat="circular">Categoria circular</button>
+          </div>
+          <div id="leg-circular" style="display:none">
+            <div class="secao">Categoria circular (ISO 59000)</div>
+            __LEG_CIRCULAR__
+            <p class="nota">Reuso, remanufatura e logística reversa aparecem com zero porque
+            <b>não têm CNAE próprio</b> na Receita Federal — a ausência é estrutural da fonte,
+            não falha de coleta.</p>
+          </div>
+          <div id="bloco-camadas">
           <div class="secao">Camadas (combináveis)</div>
           __CHK_CAMADAS__
           <div class="secao">Material recuperado</div>
@@ -1084,6 +1189,7 @@ HTML = '''<!DOCTYPE html>
             <p class="nota">Só metal e plástico têm CNAE próprio na Receita Federal.
             Papel, vidro e construção civil caem todos no código genérico 3839-4/99 e
             não podem ser separados por esta fonte.</p>
+          </div>
           </div>
         </div>
 
@@ -1122,6 +1228,7 @@ js = (JS
       .replace('__MATCH_CAMADA__', json.dumps(match_camada))
       .replace('__MATCH_MATERIAL__', json.dumps(match_material))
       .replace('__MATCH_CICLO__', json.dumps(match_ciclo))
+      .replace('__MATCH_CIRCULAR__', json.dumps(match_circular))
       .replace('__PALETA__', json.dumps(PALETA))
       .replace('__ESTAGIOS__', json.dumps(ESTAGIOS))
       .replace('__ESTAGIO_NOMES__', json.dumps([ESTAGIO_INFO[e][0] for e in ESTAGIOS],
@@ -1136,6 +1243,9 @@ html = (HTML
         .replace('__LEG_NIVEL__', leg_nivel)
         .replace('__LEG_ESTAGIO__', leg_estagio)
         .replace('__LEG_PINS__', leg_pins)
+        .replace('__LEG_CIRCULAR__', leg_circular)
+        .replace('__N_ZEROS__', str(n_zeros_falsos))
+        .replace('__NOTA_VIES__', nota_vies)
         .replace('__CHK_CAMADAS__', chk_camadas)
         .replace('__CHK_MATERIAIS__', chk_materiais)
         .replace('__CHK_CICLOS__', chk_ciclos)

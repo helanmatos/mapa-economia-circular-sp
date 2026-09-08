@@ -1,4 +1,6 @@
 .venv/
+__pycache__/
+*.pyc
 .DS_Store
 dados_rf/
 saida_partes/

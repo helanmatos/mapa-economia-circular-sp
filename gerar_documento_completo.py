@@ -118,6 +118,10 @@ POP_N4 = int(_st.median([x[1] for x in _l if x[2] == 4]))
 IDHM_N0 = _st.mean([x[0] for x in _l if x[2] == 0])
 IDHM_N4 = _st.mean([x[0] for x in _l if x[2] == 4])
 
+FALHA_RA = sorted(mat['falha_geocodificacao_ra'].items(), key=lambda x: -x[1]['pct'])
+N_ZEROS_FALSOS = len(mat['zeros_falsos'])
+TOTAL_SEM_COORD = mat['total_sem_coord']
+
 mun_sem_registro = dist_mun[0]
 pct_sem_registro = f'{100*mun_sem_registro/n_mun_total:.1f}%'
 
@@ -291,6 +295,42 @@ P(f'A <b>cobertura territorial</b> (municípios com ao menos uma iniciativa mape
   f'<b>{pct_cobertura}</b> (520 de 645 municípios). Os 125 municípios restantes não têm nenhuma '
   'iniciativa identificada nesta etapa — o que reflete a fonte usada, não necessariamente ausência '
   'real de atividade econômica de resíduos ali.')
+P('<b>O viés de geocodificação não é uniforme — e corre a favor da conclusão</b>', h2)
+P(f'As <b>{fmt(TOTAL_SEM_COORD)} empresas sem coordenada ({pct_falhou} da base)</b> não são um '
+  'problema apenas de volume. Elas ficam fora de todos os agregados — índice de maturidade, '
+  'contagem por região, cobertura territorial — e a taxa de falha varia muito entre regiões:')
+dados_vies = [[Paragraph('Região Administrativa', cel_b), Paragraph('Empresas', cel_b),
+               Paragraph('Sem coordenada', cel_b), Paragraph('% de falha', cel_b)]]
+for _ra, _d in FALHA_RA:
+    dados_vies.append([Paragraph(_ra, cel), Paragraph(fmt(_d['total']), cel),
+                       Paragraph(fmt(_d['sem_coord']), cel), Paragraph(num(_d['pct']) + '%', cel)])
+tbl_vies = Table(dados_vies, colWidths=[6.4*cm, 3*cm, 3.6*cm, 3*cm])
+tbl_vies.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, 0), VERDE_MED),
+    ('BACKGROUND', (0, 1), (-1, 4), VERMELHO_CLARO),
+    ('BACKGROUND', (0, -2), (-1, -1), VERDE_CLARO),
+    ('ROWBACKGROUNDS', (0, 5), (-1, -3), [colors.white, CINZA_CLARO]),
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+    ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+]))
+story.append(tbl_vies)
+SP_(8)
+P('Em vermelho as quatro regiões com maior perda; em verde as duas com menor. <b>As regiões que o '
+  'mapa aponta como mais vazias estão entre as que mais perdem dados.</b> O OpenStreetMap mapeia '
+  'pior as ruas de cidades pequenas do interior, então o interior aparece mais vazio em parte por '
+  'artefato de fonte. O viés empurra o resultado na direção da própria conclusão, e por isso a '
+  'diferença real entre capital e interior é menor do que os números sugerem.')
+P('Isso não anula o achado: a Grande SP tem quase 40 vezes mais iniciativas por município que '
+  'Itapeva, e 14 pontos percentuais de diferença na taxa de geocodificação não explicam uma '
+  'razão dessa magnitude. Mas qualquer citação dos "desertos circulares" precisa vir com esta '
+  'ressalva.')
+P(f'A consequência mais concreta: <b>{N_ZEROS_FALSOS} dos {fmt(mun_sem_registro)} municípios '
+  f'classificados como "sem infraestrutura" têm empresas na base</b>, apenas sem coordenada. '
+  'No mapa eles agora aparecem com textura pontilhada e o popup diz explicitamente que ali o '
+  'vazio é de mapeamento, não necessariamente de infraestrutura — "sem registro geocodificado" '
+  'e "sem nada" deixaram de ser a mesma cor.')
+
 P('<b>Casamento de nomes entre fontes</b>: as três fontes grafam o mesmo município de formas '
   'diferentes — a Receita Federal em maiúsculas sem acento, a ANEEL com acento e capitalização '
   'normal, o IBGE com a grafia oficial. Duas delas ainda divergem entre si em dois municípios '
@@ -375,6 +415,14 @@ P('Atende ao pedido de sair da visão ponto-a-ponto e olhar a cadeia por funçã
   f'cruzar coleta ({fmt(conta_camada["coleta"])} estabelecimentos) com triagem '
   f'({fmt(conta_camada["triagem"])}), ou isolar descontaminação ({fmt(conta_camada["descontaminacao"])}), '
   f'tratamento e disposição ({fmt(conta_camada["tratamento"])}) e orgânicos ({fmt(conta_camada["organicos"])}).')
+P('O tema alterna ainda entre colorir os pontos por <b>camada da cadeia</b> ou por '
+  '<b>categoria circular da ISO 59000</b> — que é o item 4 do escopo formal. Nessa segunda '
+  f'leitura, Reciclagem soma {fmt(por_categoria.get("Reciclagem", 0))} iniciativas, Valorização '
+  f'energética {fmt(por_categoria.get("Valorização energética", 0))}, Tratamento/disposição '
+  f'{fmt(por_categoria.get("Tratamento/disposição", 0))} e Bioeconomia '
+  f'{fmt(por_categoria.get("Bioeconomia", 0))}. Reuso, Remanufatura e Logística reversa aparecem '
+  'na legenda com zero de propósito: a ausência delas é o achado, não uma omissão da '
+  'visualização (ver seção 4).')
 P('Dentro de "triagem e recuperação" há a sub-camada de <b>material recuperado</b>. Aqui o '
   'documento precisa ser honesto sobre um limite da fonte: a reunião pediu metal, plástico, '
   'papel, vidro, orgânico e construção civil, mas <b>só metal e plástico têm CNAE próprio</b> '
@@ -532,6 +580,10 @@ P('No agregado por região o quadro parece muito melhor do que é: <b>todas as 1
   'entre essas duas leituras — região aparentemente completa, municípios majoritariamente incompletos '
   '— é a informação útil: <b>o problema em São Paulo não é a ausência de infraestrutura circular na '
   'região, é a distância até ela dentro da própria região.</b>')
+P(f'<b>Ressalva necessária:</b> {N_ZEROS_FALSOS} dos {fmt(mun_sem_registro)} municípios sem '
+  'registro têm empresas na base sem coordenada, e a falha de geocodificação é maior justamente '
+  'nas regiões mais vazias (seção 4). O número real de municípios sem nenhuma infraestrutura é '
+  'menor que o apurado, e a leitura correta é "sem registro georreferenciável nesta fonte".')
 P('Isso muda o tipo de política que faz sentido. Se o vazio fosse entre regiões, a resposta seria '
   'levar infraestrutura para as regiões desassistidas. Como o vazio é interno, a resposta passa mais '
   'por consórcios intermunicipais, logística de transbordo e escala compartilhada do que por novas '
