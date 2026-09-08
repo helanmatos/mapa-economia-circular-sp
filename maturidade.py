@@ -170,6 +170,17 @@ def apura(con=None):
     campos = ['coleta', 'reciclagem', 'tratamento', 'organicos_compost', 'total_residuos']
     dados_mun = {chave(r[0]): dict(zip(campos, r[1:])) for r in linhas}
 
+    # empresas que existem na base mas NÃO entraram no índice por falta de coordenada.
+    # Sem isso, um município com 2 empresas não-geocodificadas fica indistinguível de um
+    # município realmente vazio — e a falha do OSM é maior no interior, justamente onde
+    # estão os "desertos circulares", então o viés corre na direção da conclusão.
+    sem_coord = {}
+    # o CSV traz latitude vazia, que o DuckDB lê como NULL — não como string vazia
+    for mun, n in con.sql(f"SELECT municipio, count(*) FROM {T_RES} "
+                          f"WHERE latitude IS NULL GROUP BY 1").fetchall():
+        k = chave(mun)
+        sem_coord[k] = sem_coord.get(k, 0) + n
+
     energia_por_mun = {}
     for mun, n in con.sql(f"SELECT municipio, count(*) FROM {T_EN} GROUP BY 1").fetchall():
         k = chave(mun)
@@ -184,8 +195,12 @@ def apura(con=None):
         n_energia = energia_por_mun.get(k, 0)
         organicos = d['organicos_compost'] + n_energia
         nivel = calcula_nivel(d['coleta'], d['reciclagem'], d['tratamento'], organicos)
+        nao_geo = sem_coord.get(k, 0)
         feat['properties'].update({
             'nivel': nivel,
+            'nao_geocodificadas': nao_geo,
+            # nível 0 tem dois significados muito diferentes, e o mapa precisa separá-los
+            'zero_falso': nivel == 0 and nao_geo > 0,
             'coleta': d['coleta'], 'reciclagem': d['reciclagem'], 'tratamento': d['tratamento'],
             'organicos': organicos, 'total_iniciativas': d['total_residuos'] + n_energia,
             'faltando': elementos_faltando(d['coleta'], d['reciclagem'], d['tratamento'], organicos),
@@ -200,6 +215,17 @@ def apura(con=None):
     usinas_casadas = sum(n for k, n in energia_por_mun.items() if k in nomes_malha)
 
     classes_ra = {nome: pinta(ns, ra=True) for nome, ns in niveis_por_ra.items()}
+
+    # taxa de falha de geocodificação por RA — a medida do viés
+    falha_ra = {}
+    for ra_nome, tot, fal in con.sql(f"""
+        SELECT regiao_administrativa, count(*),
+               sum(CASE WHEN latitude IS NULL THEN 1 ELSE 0 END)
+        FROM {T_RES} WHERE regiao_administrativa != '' GROUP BY 1""").fetchall():
+        falha_ra[ra_nome] = {'total': tot, 'sem_coord': int(fal),
+                             'pct': round(100 * fal / tot, 1) if tot else 0.0}
+    zeros_falsos = [f['properties']['nome'] for f in geojson_mun['features']
+                    if f['properties']['zero_falso']]
     dist = [sum(1 for f in geojson_mun['features'] if f['properties']['nivel'] == k) for k in range(5)]
     total_mun = len(geojson_mun['features'])
 
@@ -211,6 +237,9 @@ def apura(con=None):
         estagios_por_ra.setdefault(ra_nome, []).append(f['properties']['estagio'])
 
     return {
+        'falha_geocodificacao_ra': falha_ra,
+        'zeros_falsos': zeros_falsos,
+        'total_sem_coord': sum(sem_coord.values()),
         'dist_estagio': dist_estagio,
         'estagios_por_ra': estagios_por_ra,
         'geojson_mun': geojson_mun,

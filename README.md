@@ -46,7 +46,7 @@ Com a regra atual nenhuma RA alcança a classe 4. A 1ª Grande SP é a única cl
 
 **1. Hub Circular** — as 16 Regiões Administrativas coloridas por maturidade, com drill-down: clica na região e ela abre nos municípios, clica no município e aparecem os pinos de cada empresa. A escala acompanha o nível: **média municipal no estado, escada nomeada no município** (ver a seção acima). O botão permite comparar as duas.
 
-**2. Tratamento de resíduos** — as 5 camadas da cadeia (coleta e movimentação, triagem e recuperação, orgânicos, tratamento e disposição, descontaminação), **combináveis entre si**: dá para ver coleta e triagem juntas, ou isolar só descontaminação. Dentro de "triagem e recuperação" há a sub-camada de material recuperado — metal, plástico e um terceiro balde honesto. Só metal e plástico têm CNAE próprio na Receita Federal; papel, vidro e construção civil caem todos no genérico 3839-4/99 e não podem ser separados por esta fonte.
+**2. Tratamento de resíduos** — as 5 camadas da cadeia (coleta e movimentação, triagem e recuperação, orgânicos, tratamento e disposição, descontaminação), **combináveis entre si**: dá para ver coleta e triagem juntas, ou isolar só descontaminação. Alterna entre colorir por **camada da cadeia** ou por **categoria circular (ISO 59000)** — nesta segunda, Reuso, Remanufatura e Logística reversa aparecem na legenda com zero, porque não têm CNAE próprio na Receita Federal e a ausência delas é o próprio achado do item 4 do escopo. Dentro de "triagem e recuperação" há a sub-camada de material recuperado — metal, plástico e um terceiro balde honesto. Só metal e plástico têm CNAE próprio na Receita Federal; papel, vidro e construção civil caem todos no genérico 3839-4/99 e não podem ser separados por esta fonte.
 
 **3. Ciclo biológico** — compostagem, biogás e biomassa energética, com o **raio do círculo proporcional à potência outorgada**. São 270 unidades somando 6.951,3 MW, quase tudo bagaço de cana no cinturão canavieiro. O contraste com o tema 1 é o achado: resíduos sólidos se concentram na Grande SP, energia se concentra no interior agrícola.
 
@@ -73,6 +73,25 @@ Os temas 2 e 3 têm ainda filtro por Região Administrativa e alternância entre
 - [`documento_completo_mapa_economia_circular.pdf`](documento_completo_mapa_economia_circular.pdf) — documento técnico completo: processo, fontes de dados, método, qualidade/limitações, conteúdo dos mapas, insights, conclusões e o que falta dentro do escopo formal.
 - [`analise_estrategica_mapa_economia_circular.pdf`](analise_estrategica_mapa_economia_circular.pdf) — análise estratégica: concentração regional, "desertos circulares", lacunas na cadeia circular e KPIs.
 - [`relatorio_mapa_economia_circular.pdf`](relatorio_mapa_economia_circular.pdf) — relatório da primeira entrega (base de empresas).
+
+## Viés de geocodificação — leia antes de citar os "desertos circulares"
+
+**1.790 das 10.509 empresas (17%) não têm coordenada** e ficam fora de todos os agregados. O OpenStreetMap mapeia mal ruas de cidades pequenas, sobretudo as nomeadas por pessoas.
+
+O problema não é o volume, é que **a falha não é uniforme**:
+
+| Região | Empresas sem coordenada |
+|---|---|
+| 11ª Marília | 27,3% |
+| 16ª Itapeva | 26,9% |
+| 7ª Bauru | 25,0% |
+| 9ª Araçatuba | 24,5% |
+| 1ª Grande SP | **13,1%** |
+| 2Aª Registro | **4,3%** |
+
+As regiões que o mapa aponta como mais vazias são, em boa parte, as que mais perdem dados. **O viés corre na direção da própria conclusão** — o interior parece mais vazio também porque é pior mapeado. A diferença real entre capital e interior é menor do que o mapa sugere, ainda que a diferença exista (a Grande SP tem quase 40× mais iniciativas por município que Itapeva, magnitude que 14 pontos de viés não explicam).
+
+Consequência direta: **26 dos 125 municípios classificados como "sem infraestrutura" têm empresas na base**, apenas sem coordenada. O mapa agora os marca com **pontilhado** e o popup diz explicitamente que ali o vazio é de mapeamento, não necessariamente de infraestrutura. "Sem registro geocodificado" e "sem nada" deixaram de ser a mesma cor.
 
 ## Limitações conhecidas
 

@@ -74,6 +74,20 @@ CICLOS = {
                  'desc': 'Bagaço de cana, resíduos florestais, licor negro, lenha'},
 }
 
+# Categorias circulares da ISO 59000 — item 4 do escopo formal. Estavam no mapa de
+# pontos anterior e se perderam na unificação; as três ausentes ficam na legenda com
+# zero de propósito, porque a ausência É o achado (não têm CNAE próprio na Receita).
+CIRCULARES = {
+    'Reciclagem': {'nome': 'Reciclagem', 'cor': '#2E7D32'},
+    'Valorização energética': {'nome': 'Valorização energética', 'cor': '#F9A825'},
+    'Tratamento/disposição': {'nome': 'Tratamento/disposição', 'cor': '#757575'},
+    'Bioeconomia': {'nome': 'Bioeconomia', 'cor': '#8D6E63'},
+    'Reuso': {'nome': 'Reuso', 'cor': '#BDBDBD'},
+    'Remanufatura': {'nome': 'Remanufatura', 'cor': '#BDBDBD'},
+    'Logística reversa': {'nome': 'Logística reversa', 'cor': '#BDBDBD'},
+}
+SEM_CNAE_PROPRIO = ('Reuso', 'Remanufatura', 'Logística reversa')
+
 CNAE_DESC = {
     '3811400': 'Coleta de resíduos não-perigosos', '3812200': 'Coleta de resíduos perigosos',
     '3821100': 'Tratamento/disposição não-perigosos', '3822000': 'Tratamento/disposição perigosos',
@@ -91,7 +105,7 @@ def carrega(con=None):
     feats = []
     cols_res = ['nome_fantasia', 'cnae_principal', 'tipo_logradouro', 'logradouro', 'numero',
                 'bairro', 'municipio', 'latitude', 'longitude', 'geocode_status',
-                'regiao_administrativa']
+                'regiao_administrativa', 'categoria_circular']
     for r in con.sql(f"SELECT {', '.join(cols_res)} FROM {T_RES} "
                      f"WHERE latitude != '' AND longitude != ''").fetchall():
         d = dict(zip(cols_res, r))
@@ -103,6 +117,7 @@ def carrega(con=None):
             'properties': {
                 'setor': 'residuos',
                 'cnae': cnae,
+                'circular': d['categoria_circular'] or '',
                 'camada': CNAE_PARA_CAMADA.get(cnae, ''),
                 'material': CNAE_PARA_MATERIAL.get(cnae, ''),
                 # compostagem é o único CNAE de resíduos que entra no ciclo biológico
@@ -120,7 +135,8 @@ def carrega(con=None):
         })
 
     cols_en = ['nome', 'categoria_energia', 'combustivel_detalhe', 'municipio', 'latitude',
-               'longitude', 'potencia_outorgada_kw', 'proprietario', 'regiao_administrativa']
+               'longitude', 'potencia_outorgada_kw', 'proprietario', 'regiao_administrativa',
+               'categoria_circular']
     for r in con.sql(f"SELECT {', '.join(cols_en)} FROM {T_EN}").fetchall():
         d = dict(zip(cols_en, r))
         ciclo = 'biogas' if d['categoria_energia'] == 'Biogás' else 'biomassa'
@@ -132,6 +148,7 @@ def carrega(con=None):
             'properties': {
                 'setor': 'energia',
                 'cnae': '',
+                'circular': d['categoria_circular'] or '',
                 # usinas de energia contam como "orgânicos" na leitura de tratamento
                 'camada': 'organicos',
                 'material': '',
@@ -152,6 +169,7 @@ def carrega(con=None):
     conta_camada = {k: 0 for k in CAMADAS}
     conta_material = {k: 0 for k in MATERIAIS}
     conta_ciclo = {k: 0 for k in CICLOS}
+    conta_circular = {k: 0 for k in CIRCULARES}
     mw_ciclo = {k: 0.0 for k in CICLOS}
     for f in feats:
         p = f['properties']
@@ -162,6 +180,8 @@ def carrega(con=None):
         if p['ciclo']:
             conta_ciclo[p['ciclo']] += 1
             mw_ciclo[p['ciclo']] += p['mw']
+        if p['circular'] in conta_circular:
+            conta_circular[p['circular']] += 1
 
     return {
         'maturidade': mat,
@@ -169,6 +189,7 @@ def carrega(con=None):
         'conta_camada': conta_camada,
         'conta_material': conta_material,
         'conta_ciclo': conta_ciclo,
+        'conta_circular': conta_circular,
         'mw_ciclo': {k: round(v, 1) for k, v in mw_ciclo.items()},
     }
 
@@ -179,4 +200,5 @@ if __name__ == '__main__':
     print('camadas   :', d['conta_camada'])
     print('materiais :', d['conta_material'])
     print('ciclos    :', d['conta_ciclo'])
+    print('circular  :', d['conta_circular'])
     print('MW        :', d['mw_ciclo'])
