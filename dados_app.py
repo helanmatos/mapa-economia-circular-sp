@@ -127,7 +127,9 @@ def carrega(con=None):
                 'endereco': (f"{d['tipo_logradouro']} {d['logradouro']}, {d['numero']} - "
                              f"{d['bairro']}, {d['municipio']}"),
                 'municipio': d['municipio'],
-                'aprox': d['geocode_status'] == 'cep_aproximado',
+                # todo ponto vindo de CEP é do logradouro, não do número — o mapa
+                # precisa dizer isso em vez de fingir precisão de porta
+                'aprox': d['geocode_status'].startswith('cep'),
                 'ra': d['regiao_administrativa'] or '',
                 'municipio_norm': chave(d['municipio']),
                 'mw': 0,
