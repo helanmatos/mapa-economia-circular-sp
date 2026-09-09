@@ -6,7 +6,7 @@ Mapeamento georreferenciado de iniciativas de economia circular no estado de Sã
 
 ## O que tem no mapa
 
-- **8.719 empresas** de resíduos sólidos urbanos (coleta, tratamento, recuperação de materiais), extraídas dos Dados Abertos do CNPJ da Receita Federal e geocodificadas via Nominatim/OpenStreetMap.
+- **10.504 empresas** de resíduos sólidos urbanos (coleta, tratamento, recuperação de materiais), extraídas dos Dados Abertos do CNPJ da Receita Federal e geocodificadas em duas passadas — Nominatim/OpenStreetMap e, para o que ele não achou, coordenada do CEP validada contra o polígono do município.
 - **239 usinas de energia** por biogás/biomassa em operação, via dados abertos da ANEEL (SIGA), já com coordenadas oficiais.
 - Filtro por **Região Administrativa** (as 16 RAs do estado) e por **categoria circular** (ISO 59000: Reciclagem, Bioeconomia, Valorização energética, Tratamento/disposição).
 - **Quatro temas numa aplicação só** (`index.html`), com troca instantânea entre eles — os dados são carregados uma vez e o que muda é filtro, cor e visibilidade, então a navegação não recarrega nada e preserva o enquadramento do mapa.
@@ -36,7 +36,7 @@ A **escada composicional** é a leitura proposta na reunião: não conta quantos
 
 **Por que a escada não serve para a região.** Agregada por RA, ela volta a medir "presença em algum ponto do território" — exatamente o defeito que a média veio corrigir. Pela escada, 12 das 16 regiões são "circulares", incluindo a 9ª Araçatuba, que tem **um único** estabelecimento de tratamento e 32,6% dos municípios sem nenhum registro. No sentido oposto, a 2ª Santos, com 0% de municípios vazios, cai para "estruturado". Abrir Araçatuba no mapa mostra o problema de imediato: a região verde se desfaz em vermelhos, laranjas e um só município verde.
 
-**Por que a escada é melhor no município.** Ela prioriza o tratamento/disposição, que é o elo escasso do estado — 108 estabelecimentos, contra 3.227 de coleta e 5.326 de triagem. As duas escalas discordam em 128 dos 645 municípios — a contagem chama de "quase completo" municípios que a escada mantém em "básico" por falta de tratamento, e chama de "intermediário" outros que a escada rebaixa a "incipiente" por falta de coleta.
+**Por que a escada é melhor no município.** Ela prioriza o tratamento/disposição, que é o elo escasso do estado — 137 estabelecimentos, contra 3.894 de coleta e 6.387 de triagem. As duas escalas discordam em 128 dos 645 municípios — a contagem chama de "quase completo" municípios que a escada mantém em "básico" por falta de tratamento, e chama de "intermediário" outros que a escada rebaixa a "incipiente" por falta de coleta.
 
 O botão de escala continua no painel para comparar as duas; ao mudar de nível ele volta ao padrão. Forçar a escada no estado exibe um aviso explicando o que aquela leitura esconde.
 
@@ -74,26 +74,28 @@ Os temas 2 e 3 têm ainda filtro por Região Administrativa e alternância entre
 - [`analise_estrategica_mapa_economia_circular.pdf`](analise_estrategica_mapa_economia_circular.pdf) — análise estratégica: concentração regional, "desertos circulares", lacunas na cadeia circular e KPIs.
 - [`relatorio_mapa_economia_circular.pdf`](relatorio_mapa_economia_circular.pdf) — relatório da primeira entrega (base de empresas).
 
-## Geocodificação: o que ela afeta e o que não afeta
+## Geocodificação em duas passadas
 
-**1.790 das 10.509 empresas (17%) não têm coordenada.** O OpenStreetMap mapeia mal ruas de cidades pequenas, sobretudo as nomeadas por pessoas. Mas essas empresas **contam no índice de maturidade**: o município está preenchido em 100% dos registros, e o índice é por município — a coordenada só é necessária para desenhar o ponto no mapa.
+**10.504 dos 10.509 estabelecimentos (100,0%) estão no mapa.** Chegar aí exigiu duas passadas, porque a primeira tinha um vazio grande e enviesado.
 
-Isso nem sempre foi assim. Até a v6 o índice filtrava por coordenada, o que descartava 1.790 empresas de município conhecido e produzia um viés na direção da própria conclusão, porque a falha de geocodificação é maior no interior:
+**1ª passada — Nominatim/OpenStreetMap.** Geocodificou 8.719 (83%). Os 1.790 que faltaram eram endereços de cidades pequenas do interior, que o OSM mapeia mal. E a falha não era uniforme: ia de 4,3% na 2ª Registro a 27,3% na 11ª Marília, concentrada justamente nas regiões que o mapa aponta como vazias.
 
-| Região | Empresas sem coordenada |
-|---|---|
-| 11ª Marília | 27,3% |
-| 16ª Itapeva | 26,9% |
-| 7ª Bauru | 25,0% |
-| 9ª Araçatuba | 24,5% |
-| 1ª Grande SP | **13,1%** |
-| 2Aª Registro | **4,3%** |
+**2ª passada — por CEP.** Todos os 1.790 têm CEP de 8 dígitos (1.602 distintos), e o CEP tem coordenada em bases que não dependem do OSM. Testando com CEPs reais da base:
 
-Corrigido o cálculo, os números mudaram de forma relevante: municípios sem nenhuma infraestrutura caíram de **125 para 99**, a média estadual subiu de 1,62 para **1,78**, os municípios com a cadeia completa passaram de 23 para **36**, e a 11ª Marília subiu de classe 1 para 2. Os "desertos" encolheram — Itapeva de 37,5% para 28,1% de municípios vazios, Bauru de 23,1% para 15,4%.
+| Fonte | Retorna coordenada | Cai no município certo |
+|---|---|---|
+| **BrasilAPI v2** | 97% | **100% das que retorna** |
+| AwesomeAPI | 100% | 92% — 8% caem na Grande SP |
+| ViaCEP | — | não devolve coordenada |
+| Photon (OSM) | sim | erra o município |
 
-**O que ainda depende de coordenada é só a visualização de pontos.** Em 33 municípios existem empresas mas nenhuma aparece como ponto no mapa; eles são marcados com **pontilhado**, e o popup avisa que o índice ali está correto mas o mapa não mostrará pinos.
+A BrasilAPI entrou como fonte principal e a AwesomeAPI como reserva. **Toda coordenada é validada contra o polígono do município declarado no CNPJ** — sem isso, a reserva injetaria erro grosseiro: no CEP de Aguaí ela devolve um ponto perto de Taubaté, acertando o nome da cidade e errando o lugar.
 
-E a lista deixou de ser um aviso abstrato: ao entrar numa região ou município, o painel traz o link **"N empresas sem geolocalização definida"**, que abre a relação das empresas que não viraram ponto — CNPJ, atividade e endereço, dez por vez. Como 83% delas não têm nome fantasia, é o CNPJ e o endereço que tornam a lista utilizável: dá para conferir na Receita ou corrigir a coordenada à mão.
+Resultado: **1.785 dos 1.790 recuperados**, 5 descartados por cair fora do município. Empresas sem coordenada caíram de 1.790 para **5**, municípios sem nenhum ponto no mapa de 33 para **zero**, e a pior taxa de falha por região de 27,3% para **0,2%**.
+
+**O índice não mudou com isso** — [99, 162, 203, 145, 36], média 1,78 — e isso é o esperado: desde a v7 o índice é calculado por município, e o município sempre esteve preenchido em 100% dos registros. A geocodificação corrigiu o **mapa**, não a medida.
+
+**Ressalva de precisão:** os 2.487 pontos vindos de CEP (702 da 1ª passada + 1.785 da 2ª) têm precisão de **logradouro, não de número**. Em CEP geral de município caem no centro da cidade. O popup os marca como aproximados.
 
 ## Limitações conhecidas
 
@@ -101,6 +103,6 @@ Fontes institucionais adicionais previstas no escopo (CETESB, SNIS, cadastro de 
 
 ## Reproduzindo o pipeline
 
-Scripts em Python (DuckDB + reportlab), executados em sequência: `run_pipeline.sh` (extração CNPJ) → `geocodifica.py` (geocodificação Nominatim) → `extrai_aneel.py` (energia ANEEL) → `extrai_contexto.py` (população IBGE + IDHM Ipeadata) → `enriquece.py` (Região Administrativa + categoria circular) → `gerar_app.py` (a aplicação de quatro temas) → `gerar_documento_completo.py` / `gerar_analise_estrategica.py` / `gerar_relatorio.py` (PDFs).
+Scripts em Python (DuckDB + reportlab), executados em sequência: `run_pipeline.sh` (extração CNPJ) → `geocodifica.py` (geocodificação Nominatim) → `extrai_aneel.py` (energia ANEEL) → `geocodifica_cep.py` (2ª passada por CEP) → `extrai_contexto.py` (população IBGE + IDHM Ipeadata) → `enriquece.py` (Região Administrativa + categoria circular) → `gerar_app.py` (a aplicação de quatro temas) → `gerar_documento_completo.py` / `gerar_analise_estrategica.py` / `gerar_relatorio.py` (PDFs).
 
 Dois módulos concentram as regras para que mapa e documento nunca divirjam: **`maturidade.py`** (índice de maturidade, escalas de cor, escada composicional) e **`dados_app.py`** (camadas, materiais e ciclos). O cruzamento de município entre fontes passa sempre por `enriquece.chave()` — normalizar só um lado do join faz ele falhar em silêncio, e foi assim que 105 usinas de energia ficaram fora do índice numa versão anterior.

@@ -295,17 +295,11 @@ P(f'A <b>cobertura territorial</b> (municípios com ao menos uma iniciativa mape
   f'<b>{pct_cobertura}</b> (520 de 645 municípios). Os 125 municípios restantes não têm nenhuma '
   'iniciativa identificada nesta etapa — o que reflete a fonte usada, não necessariamente ausência '
   'real de atividade econômica de resíduos ali.')
-P('<b>Geocodificação: o que ela afeta e o que não afeta</b>', h2)
-P(f'As <b>{fmt(TOTAL_SEM_COORD)} empresas sem coordenada ({pct_falhou} da base)</b> continuam '
-  'contando no índice de maturidade: o município está preenchido em <b>100% dos registros</b>, e o '
-  'índice é calculado por município — a coordenada só é necessária para desenhar o ponto no mapa. '
-  'Isso não era assim até a versão anterior deste documento, e a correção mudou números que '
-  'apareciam aqui: municípios sem nenhuma infraestrutura caíram de 125 para '
-  f'{fmt(mun_sem_registro)}, a média estadual subiu de 1,62 para {media_estadual}, e os municípios '
-  f'com a cadeia completa passaram de 23 para {fmt(dist_mun[4])}.')
-P('A correção importava porque a falha de geocodificação <b>não é uniforme entre as regiões</b> — '
-  'ela é maior justamente no interior, onde o mapa aponta os vazios, então o filtro antigo empurrava '
-  'o resultado na direção da própria conclusão:')
+P('<b>Geocodificação em duas passadas</b>', h2)
+P('A primeira passada usou o Nominatim/OpenStreetMap e localizou 8.719 dos 10.509 endereços '
+  '(83%). Os 1.790 restantes eram de cidades pequenas do interior, que o OSM mapeia mal — e a '
+  'falha não era uniforme, indo de 4,3% na 2ª Registro a 27,3% na 11ª Marília, concentrada '
+  'justamente nas regiões que o mapa aponta como vazias:')
 dados_vies = [[Paragraph('Região Administrativa', cel_b), Paragraph('Empresas', cel_b),
                Paragraph('Sem coordenada', cel_b), Paragraph('% de falha', cel_b)]]
 for _ra, _d in FALHA_RA:
@@ -323,15 +317,25 @@ tbl_vies.setStyle(TableStyle([
 ]))
 story.append(tbl_vies)
 SP_(8)
-P('Em vermelho as quatro regiões com maior perda; em verde as duas com menor. Com o índice '
-  'calculado por município, essa diferença deixou de contaminar a maturidade — <b>o que ela ainda '
-  'afeta é a densidade visual de pontos</b>: o interior aparece com menos pinos do que tem, e '
-  'qualquer leitura feita "no olho" sobre a quantidade de pontos herda esse viés.')
-P(f'Em <b>{N_ZEROS_FALSOS} municípios</b> existem empresas mas nenhuma delas tem coordenada, então '
-  'abrir o município não mostra pino nenhum embora o índice acuse serviços. Esses casos recebem '
-  'textura pontilhada no mapa e um aviso no popup. Além disso, ao entrar numa região ou município '
-  'o painel traz um link que abre a relação das empresas sem coordenada — CNPJ, atividade e '
-  'endereço —, de modo que a lacuna é verificável e corrigível, não apenas declarada.')
+P('<b>A segunda passada fechou essa lacuna.</b> Todos os 1.790 endereços têm CEP de 8 dígitos '
+  '(1.602 distintos), e o CEP tem coordenada em bases que não dependem do OpenStreetMap. Foram '
+  'testadas quatro: a <b>BrasilAPI v2</b> devolveu coordenada para 97% dos CEPs de uma amostra, '
+  'todas dentro do município correto; a AwesomeAPI respondeu 100% mas errou 8% (acerta o nome da '
+  'cidade e devolve um ponto na Grande SP); ViaCEP não devolve coordenada; e o Photon erra o '
+  'município. A BrasilAPI ficou como fonte principal e a AwesomeAPI como reserva.')
+P('<b>Toda coordenada é validada contra o polígono do município declarado no CNPJ</b> e descartada '
+  'se cair fora. É essa checagem que torna a reserva utilizável sem injetar erro grosseiro. '
+  'Resultado: <b>1.785 dos 1.790 recuperados</b>, 5 descartados. Estabelecimentos sem coordenada '
+  f'caíram de 1.790 para {fmt(TOTAL_SEM_COORD)}, municípios sem nenhum ponto no mapa de 33 para '
+  f'{N_ZEROS_FALSOS}, e a pior taxa de falha regional de 27,3% para 0,2%.')
+P(f'<b>O índice não mudou com isso</b> — a distribuição continua {dist_mun} e a média '
+  f'{media_estadual}. É o esperado: o índice é calculado por município, e o município sempre '
+  'esteve preenchido em 100% dos registros. A segunda passada corrigiu o <b>mapa</b>, não a '
+  'medida. (A correção da medida veio antes, ao deixar de filtrar o índice por coordenada: '
+  f'municípios sem infraestrutura caíram de 125 para {fmt(mun_sem_registro)} e a média subiu de '
+  f'1,62 para {media_estadual}.)')
+P('<b>Ressalva de precisão:</b> os 2.487 pontos vindos de CEP têm precisão de logradouro, não de '
+  'número; em CEP geral de município caem no centro da cidade. O popup os marca como aproximados.')
 
 P('<b>Casamento de nomes entre fontes</b>: as três fontes grafam o mesmo município de formas '
   'diferentes — a Receita Federal em maiúsculas sem acento, a ANEEL com acento e capitalização '

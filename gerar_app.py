@@ -1185,13 +1185,19 @@ TOTAL_BASE = 10509
 _pct_geral = f'{100 * total_sem_coord / TOTAL_BASE:.0f}'
 _pct_melhor = f'{melhor_d["pct"]:.1f}'.replace('.', ',')
 _pct_pior = f'{pior_d["pct"]:.1f}'.replace('.', ',')
+bloco_vazio = ('' if not n_zeros_falsos else f'''
+          <div class="secao">Como ler o vazio</div>
+          <div class="leg-item"><span class="sw sw-zerofalso"></span>
+            <span class="leg-txt">Conta no índice, mas <b>sem ponto no mapa</b><span
+            class="leg-sub">o endereço não foi localizado — {n_zeros_falsos} municípios</span></span></div>''')
+
+_pct_coord = f'{100 * (TOTAL_BASE - total_sem_coord) / TOTAL_BASE:.1f}'.replace('.', ',')
 nota_vies = (
-    f'<b>{milhar(total_sem_coord)} das {milhar(TOTAL_BASE)} empresas ({_pct_geral}%) não têm '
-    f'coordenada</b> — o OpenStreetMap mapeia mal ruas de cidades pequenas. Elas <b>contam no '
-    f'índice</b>, porque o município está preenchido em 100% dos registros e o índice é por '
-    f'município; o que se perde é só a posição exata do ponto no mapa. A falha não é uniforme '
-    f'(de {_pct_melhor}% na {melhor_ra} a {_pct_pior}% na {pior_ra}), então a leitura afetada é '
-    f'a densidade visual de pontos, não a maturidade.')
+    f'<b>{_pct_coord}% dos estabelecimentos estão no mapa.</b> O Nominatim/OpenStreetMap não '
+    f'localizou 1.790 endereços de cidades pequenas do interior; uma segunda passada por CEP '
+    f'(BrasilAPI, com a coordenada validada contra o polígono do município) recuperou 1.785 '
+    f'deles. Restam <b>{milhar(total_sem_coord)}</b>. Pontos vindos de CEP têm precisão de '
+    f'logradouro, não de número, e o popup os marca como aproximados.')
 
 aba_contexto = '''
       <button class="aba" data-tema="contexto">Contexto
@@ -1345,10 +1351,7 @@ HTML = '''<!DOCTYPE html>
           <div id="hub-vazio" style="display:none"></div>
           <p class="dica">Clique numa região para ver os municípios; clique num município
           para ver as empresas.</p>
-          <div class="secao">Como ler o vazio</div>
-          <div class="leg-item"><span class="sw sw-zerofalso"></span>
-            <span class="leg-txt">Conta no índice, mas <b>sem ponto no mapa</b><span class="leg-sub">o
-            endereço não foi localizado — __N_ZEROS__ municípios</span></span></div>
+          __BLOCO_VAZIO__
           <div id="bloco-sem-coord" style="display:none">
             <a href="#" id="link-sem-coord"></a>
             <div id="corpo-sem-coord" style="display:none"></div>
@@ -1447,7 +1450,7 @@ html = (HTML
         .replace('__LEG_PINS__', leg_pins)
         .replace('__MINI_W__', str(MINI_W)).replace('__MINI_H__', str(MINI_H))
         .replace('__LEG_CIRCULAR__', leg_circular)
-        .replace('__N_ZEROS__', str(n_zeros_falsos))
+        .replace('__BLOCO_VAZIO__', bloco_vazio)
         .replace('__NOTA_VIES__', nota_vies)
         .replace('__CHK_CAMADAS__', chk_camadas)
         .replace('__CHK_MATERIAIS__', chk_materiais)
