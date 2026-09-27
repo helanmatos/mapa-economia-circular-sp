@@ -45,7 +45,7 @@ addMapping('Corpo', 0, 1, 'Corpo-Italico')
 addMapping('Corpo', 1, 1, 'Corpo-NegritoItalico')
 
 SAIDA = 'relatorio_entrega_mapa_economia_circular.pdf'
-DATA = '18/09/2026'
+DATA = '27/09/2026'
 URL_MAPA = 'https://helanmatos.github.io/mapa-economia-circular-sp/'
 URL_REPO = 'https://github.com/helanmatos/mapa-economia-circular-sp'
 CAPTURAS = 'docs/capturas'
@@ -463,9 +463,16 @@ topico('<b>Levar o achado de escala para a discussão de política</b>: se o des
 topico('<b>Coleta primária</b>, por questionário, para o que nenhuma fonte pública contém: tipo de '
        'organização, porte, estágio de maturidade de cada iniciativa e impacto.')
 espaco(14)
-P(f'O código, os dados e o documento técnico completo — com o detalhamento de método, fontes e '
-  f'decisões — estão disponíveis em <link href="{URL_REPO}" color="#1B5E20"><u>{URL_REPO}</u></link>.',
-  ParagraphStyle('rod', parent=corpo, fontSize=9, textColor=CINZA))
+P('Documentos complementares', h2)
+P('Dois documentos aprofundam pontos deste relatório, e ambos estão publicados junto com o mapa:')
+topico('<b>Análise estratégica</b> — concentração regional, as regiões com menor densidade de '
+       'iniciativas, as lacunas na cadeia circular e os indicadores do item 11 do escopo.')
+topico('<b>Documento técnico completo</b> — fontes, método de extração e tratamento, qualidade dos '
+       'dados e o detalhamento de cada decisão tomada na construção.')
+espaco(6)
+P(f'Os dois, mais o código e os dados, estão em '
+  f'<link href="{URL_REPO}" color="#1B5E20"><u>{URL_REPO}</u></link>.',
+  ParagraphStyle('rod', parent=corpo, fontSize=9.5, textColor=CINZA))
 
 
 # ---------------------------------------------------------------- capa e rodapé
