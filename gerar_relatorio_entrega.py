@@ -47,7 +47,6 @@ addMapping('Corpo', 1, 1, 'Corpo-NegritoItalico')
 SAIDA = 'relatorio_entrega_mapa_economia_circular.pdf'
 DATA = '27/09/2026'
 URL_MAPA = 'https://helanmatos.github.io/mapa-economia-circular-sp/'
-URL_REPO = 'https://github.com/helanmatos/mapa-economia-circular-sp'
 CAPTURAS = 'docs/capturas'
 
 VERDE = colors.HexColor('#1B5E20')
@@ -470,9 +469,10 @@ topico('<b>Análise estratégica</b> — concentração regional, as regiões co
 topico('<b>Documento técnico completo</b> — fontes, método de extração e tratamento, qualidade dos '
        'dados e o detalhamento de cada decisão tomada na construção.')
 espaco(6)
-P(f'Os dois, mais o código e os dados, estão em '
-  f'<link href="{URL_REPO}" color="#1B5E20"><u>{URL_REPO}</u></link>.',
-  ParagraphStyle('rod', parent=corpo, fontSize=9.5, textColor=CINZA))
+# fecha com o endereço do mapa, não do repositório: é o produto que o leitor vai usar
+P(f'<b>O mapa está no ar e pode ser acessado agora:</b><br/>'
+  f'<link href="{URL_MAPA}" color="#1B5E20"><u>{URL_MAPA}</u></link><br/>'
+  f'Os dois documentos acima estão publicados no mesmo endereço.', caixa)
 
 
 # ---------------------------------------------------------------- capa e rodapé
