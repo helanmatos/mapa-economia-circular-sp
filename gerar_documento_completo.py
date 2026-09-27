@@ -74,7 +74,19 @@ def fmt(n):
 total_base_fmt, total_geo_fmt, total_mapa_fmt = fmt(total_base), fmt(total_geo), fmt(total_mapa)
 pct_geo = f'{100*total_geo/total_base:.1f}%'
 pct_falhou = f'{100*status_geo.get("falhou",0)/total_base:.1f}%'
-pct_cobertura = '80,6%'
+# cobertura territorial calculada, não fixa: ficou desatualizada quando a
+# geocodificação por CEP colocou mais 26 municípios no mapa
+from enriquece import chave as _chave
+_malha_cob = {f['properties']['municipio_norm'] for f in apura(con)['geojson_mun']['features']}
+_com_ponto = set()
+for _tab, _filtro in ((t_res, "latitude != ''"), (t_en, '1=1')):
+    for (_mun,) in con.sql(f'SELECT DISTINCT municipio FROM {_tab} WHERE {_filtro}').fetchall():
+        _com_ponto.add(_chave(_mun))
+_com_ponto &= _malha_cob
+N_MUN_TOTAL = len(_malha_cob)
+N_COBERTOS = len(_com_ponto)
+N_SEM_COB = N_MUN_TOTAL - N_COBERTOS
+pct_cobertura = f'{100 * N_COBERTOS / N_MUN_TOTAL:.1f}%'.replace('.', ',')
 
 # indice de maturidade: vem do MESMO modulo que gera o mapa, para o documento nunca
 # divergir do que esta publicado
@@ -292,7 +304,7 @@ P(f'O padrão de falha (<b>{pct_falhou}</b>) concentra-se em cidades pequenas do
   'nomeadas por pessoa que o OpenStreetMap ainda não mapeou — não é erro de processamento, é '
   'lacuna real de cobertura do OSM em municípios menores.')
 P(f'A <b>cobertura territorial</b> (municípios com ao menos uma iniciativa mapeada) é de '
-  f'<b>{pct_cobertura}</b> (520 de 645 municípios). Os 125 municípios restantes não têm nenhuma '
+  f'<b>{pct_cobertura}</b> ({N_COBERTOS} de {N_MUN_TOTAL} municípios). Os {N_SEM_COB} restantes não têm nenhuma '
   'iniciativa identificada nesta etapa — o que reflete a fonte usada, não necessariamente ausência '
   'real de atividade econômica de resíduos ali.')
 P('<b>Geocodificação em duas passadas</b>', h2)
@@ -364,7 +376,7 @@ P('As visualizações foram unificadas em <b>uma única aplicação com quatro t
 
 P('5.1 Hub Circular por Região Administrativa', h2)
 P('É o mapa mais estratégico dos três, e nasceu da reformulação proposta na reunião de produto de '
-  '07/09/2026: em vez de despejar 8.958 pontos na tela, olhar primeiro a infraestrutura de cada '
+  f'07/09/2026: em vez de despejar {fmt(total_mapa)} pontos na tela, olhar primeiro a infraestrutura de cada '
   'região. O estado aparece dividido nas 16 Regiões Administrativas, coloridas por maturidade. '
   'Clicando numa região, ela se abre nos seus municípios, também coloridos; clicando num município, '
   'aparecem os pinos de cada empresa e usina. A navegação tem trilha (Estado - Região - Município) '
